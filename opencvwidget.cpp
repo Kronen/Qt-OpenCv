@@ -96,11 +96,19 @@ void OpenCVWidget::detectFace(IplImage *cvImage) {
     IplImage *smallImage = cvCreateImage(cvSize(cvRound(cvImage->width/scale), cvRound(cvImage->height/scale)),
                                          cvImage->depth, CV_8UC1);
 
-    //cvCvtColor(cvImage, grayImage, CV_RGB2GRAY);      // Convert to gray scale (Segmentation Fault)
-    cvConvertImage(cvImage, grayImage, 0);
+    // From their documentation:
+    //      With its new c++ interface OpenCV needs GCC 4.x.
+    // * Therefore you need to use the official release of MinGW with GCC 4.4.x (released in June 22, 2009
+    // see MinGW GCC 4.4 release note).
+
+    // I can't use the new c++ interface, so maybe the OpenCV-2.0.0a-win32 executable in their official web
+    // is not compiled against gcc 4.x??? And then, that could be the reason I get the following segmentation faults.
+
+    //cvCvtColor(cvImage, grayImage, CV_RGB2GRAY);      // Convert to gray scale (Segmentation Fault)                                                        
+    cvConvertImage(cvImage, grayImage, 0);              // hack
 
     //cvResize(grayImage, smallImage, CV_INTER_LINEAR);    // Resize to a small image (Segmentation Fault)
-    cvCopy(grayImage, smallImage, 0);
+    cvCopy(grayImage, smallImage, 0);                      // No resize
 
     cvEqualizeHist(smallImage, smallImage);         // Grays smoothing (normaliza brillo, incrementa contraste)
     cvClearMemStorage(mStorage);
