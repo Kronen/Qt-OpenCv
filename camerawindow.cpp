@@ -30,7 +30,7 @@ void CameraWindow::takeScreenshot() {
 }
 
 void CameraWindow::writeVideo() {
-    if(!writingVideo) {
+    if(!isWritingVideo()) {
         qDebug() << "Writing Video";
         writingVideo = true;
         videoAction->setIcon(QIcon(":/images/icon_stopvideo.png"));
@@ -48,6 +48,10 @@ void CameraWindow::writeVideo() {
 
         cvWidget->videoStop();
     }
+}
+
+bool CameraWindow::isWritingVideo() {
+    return writingVideo;
 }
 
 void CameraWindow::detectFaces() {
@@ -99,12 +103,14 @@ void CameraWindow::createActions() {
     videoAction->setIcon(QIcon(":/images/icon_video.png"));
     videoAction->setShortcut(tr("F6"));
     videoAction->setStatusTip(tr("Record a video from the camera"));
+    videoAction->setCheckable(true);
     connect(videoAction, SIGNAL(triggered()), this, SLOT(writeVideo()));
 
     detectfacesAction = new QAction(tr("Detect &Faces"), this);
     detectfacesAction->setIcon(QIcon(":/images/icon_detectfaces.png"));
     detectfacesAction->setShortcut(tr("F6"));
     detectfacesAction->setStatusTip(tr("Detect the faces on the camera image"));
+    detectfacesAction->setCheckable(true);
     connect(detectfacesAction, SIGNAL(triggered()), this, SLOT(detectFaces()));
 }
 

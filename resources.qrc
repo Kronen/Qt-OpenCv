@@ -6,7 +6,5 @@
         <file>images/icon_video.png</file>
         <file>images/icon_stopvideo.png</file>
         <file>images/icon_detectfaces.png</file>
-        <file alias="EyeRecognition">haarcascade/haarcascade_eye.xml</file>
-        <file alias="FaceRecognition">haarcascade/haarcascade_frontalface_alt2.xml</file>
     </qresource>
 </RCC>

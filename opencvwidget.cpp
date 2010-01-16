@@ -25,7 +25,7 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
     cvCvtColor(mCvImage, mCvImage, CV_BGR2RGB);
 
     mStorage = cvCreateMemStorage(0);
-    QString cascadeName = ":/FaceRecognition";
+    QString cascadeName = "haarcascade_frontalface_alt2.xml";
     mCascade = (CvHaarClassifierCascade*)cvLoad(cascadeName.toLatin1(), 0, 0, 0);    
 
     mTimer = new QTimer(this);
@@ -96,11 +96,9 @@ void OpenCVWidget::detectFace(IplImage *cvImage) {
     IplImage *smallImage = cvCreateImage(cvSize(cvRound(cvImage->width/scale), cvRound(cvImage->height/scale)),
                                          cvImage->depth, CV_8UC1);
 
-    qDebug() << "converting to gray";
     //cvCvtColor(cvImage, grayImage, CV_RGB2GRAY);      // Convert to gray scale (Segmentation Fault)
     cvConvertImage(cvImage, grayImage, 0);
 
-    qDebug() << "converting to small";
     //cvResize(grayImage, smallImage, CV_INTER_LINEAR);    // Resize to a small image (Segmentation Fault)
     cvCopy(grayImage, smallImage, 0);
 

@@ -25,6 +25,7 @@ class CameraWindow : public QMainWindow {
     private slots:
         void takeScreenshot();
         void writeVideo();
+        bool isWritingVideo();
         void detectFaces();
         void cerrar();
 
