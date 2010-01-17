@@ -46,7 +46,6 @@ private:
 
     CvMemStorage *mStorage;
     CvHaarClassifierCascade *mCascade;
-    QRect mFaceRect;
     QVector<QRect> listRect;
     bool mDetectFaces;
 

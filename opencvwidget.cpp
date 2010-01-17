@@ -8,7 +8,6 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
     fps = 10;
 
     mDetectFaces = false;
-    mFaceRect = QRect(-1,-1,0,0);
 
     IplImage* frame = cvQueryFrame(mCamera);
     w = frame->width;
@@ -71,44 +70,27 @@ void OpenCVWidget::paintEvent(QPaintEvent *event) {
     if(!listRect.empty()) {
         QPen pen(palette().dark().color(), 5, Qt::SolidLine, Qt::FlatCap, Qt::BevelJoin);
         painter.setPen(pen);
-        foreach(QRect rect, listRect) painter.drawRect(mFaceRect);
+        foreach(QRect rect, listRect) painter.drawRect(rect);
         listRect.clear();
     }
-
-/*  if(mFaceRect.x() > 0 && mFaceRect.y() > 0) {
-        QPen pen(palette().dark().color(), 5, Qt::SolidLine, Qt::FlatCap, Qt::BevelJoin);
-        painter.setPen(pen);
-        painter.drawRect(mFaceRect);
-    }*/
 }
 
 void OpenCVWidget::setDetectFaces(bool detect) {
     mDetectFaces = detect;
-    if(!detect) mFaceRect = QRect(-1,-1,0,0);
 }
 
 void OpenCVWidget::detectFace(IplImage *cvImage) {
     CvRect *rect = NULL;
-    double scale = 1;
+    double scale = 1.3;
     int i;
 
     IplImage *grayImage = cvCreateImage(cvSize(cvImage->width, cvImage->height), cvImage->depth, CV_8UC1);
     IplImage *smallImage = cvCreateImage(cvSize(cvRound(cvImage->width/scale), cvRound(cvImage->height/scale)),
                                          cvImage->depth, CV_8UC1);
 
-    // From their documentation:
-    //      With its new c++ interface OpenCV needs GCC 4.x.
-    // * Therefore you need to use the official release of MinGW with GCC 4.4.x (released in June 22, 2009
-    // see MinGW GCC 4.4 release note).
+    cvCvtColor(cvImage, grayImage, CV_RGB2GRAY);      // Convert to gray scale
 
-    // I can't use the new c++ interface, so maybe the OpenCV-2.0.0a-win32 executable in their official web
-    // is not compiled against gcc 4.x??? And then, that could be the reason I get the following segmentation faults.
-
-    //cvCvtColor(cvImage, grayImage, CV_RGB2GRAY);      // Convert to gray scale (Segmentation Fault)                                                        
-    cvConvertImage(cvImage, grayImage, 0);              // hack
-
-    //cvResize(grayImage, smallImage, CV_INTER_LINEAR);    // Resize to a small image (Segmentation Fault)
-    cvCopy(grayImage, smallImage, 0);                      // No resize
+    cvResize(grayImage, smallImage, CV_INTER_LINEAR);    // Resize to a small image
 
     cvEqualizeHist(smallImage, smallImage);         // Grays smoothing (normaliza brillo, incrementa contraste)
     cvClearMemStorage(mStorage);
@@ -116,8 +98,7 @@ void OpenCVWidget::detectFace(IplImage *cvImage) {
     if(mCascade) {
         double timeElapsed = (double)cvGetTickCount();
         CvSeq *faces = cvHaarDetectObjects(smallImage, mCascade, mStorage, 1.1, 2, 0
-
-                                           | CV_HAAR_FIND_BIGGEST_OBJECT
+                                           //| CV_HAAR_FIND_BIGGEST_OBJECT
                                            | CV_HAAR_DO_ROUGH_SEARCH
                                            //| CV_HAAR_DO_CANNY_PRUNING
                                            | CV_HAAR_SCALE_IMAGE
@@ -134,9 +115,6 @@ void OpenCVWidget::detectFace(IplImage *cvImage) {
 
     cvReleaseImage(&grayImage);
     cvReleaseImage(&smallImage);
-
-    if(rect) mFaceRect =  QRect(rect->x * scale, rect->y * scale, rect->width * scale, rect->height * scale);
-        else mFaceRect =  QRect(-1,-1,0,0);
 }
 
 QImage OpenCVWidget::image() const {
