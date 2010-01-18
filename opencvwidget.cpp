@@ -1,6 +1,8 @@
 #include "opencvwidget.h"
+
 #include <QtDebug>
-#include <QResizeEvent>
+#include <QFileInfo>
+#include <QMessageBox>
 
 OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
     mCamera = cvCreateCameraCapture(0);
@@ -24,15 +26,25 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
     cvCvtColor(mCvImage, mCvImage, CV_BGR2RGB);
 
     mStorage = cvCreateMemStorage(0);
-    QString cascadeName = "haarcascade_frontalface_alt2.xml";
-    mCascade = (CvHaarClassifierCascade*)cvLoad(cascadeName.toLatin1(), 0, 0, 0);    
+    mCascadeFile = "";
 
     mTimer = new QTimer(this);
     connect(mTimer, SIGNAL(timeout()), this, SLOT(queryFrame()));
     mTimer->start(1000/fps);
 }
 
+QString OpenCVWidget::cascadeFile() {
+    return mCascadeFile;
+}
+
+void OpenCVWidget::setCascadeFile(QString cascadeFile) {
+    mCascadeFile = cascadeFile;
+    if(mCascade) delete mCascade;
+    mCascade = (CvHaarClassifierCascade*)cvLoad(mCascadeFile.toLatin1(), 0, 0, 0);
+}
+
 OpenCVWidget::~OpenCVWidget() {
+    delete mCascade;
     cvReleaseCapture(&mCamera);
 }
 
@@ -68,7 +80,7 @@ void OpenCVWidget::paintEvent(QPaintEvent *event) {
     }
 
     if(!listRect.empty()) {
-        QPen pen(palette().dark().color(), 5, Qt::SolidLine, Qt::FlatCap, Qt::BevelJoin);
+        QPen pen(palette().dark().color(), 3, Qt::SolidLine, Qt::FlatCap, Qt::BevelJoin);
         painter.setPen(pen);
         foreach(QRect rect, listRect) painter.drawRect(rect);
         listRect.clear();
@@ -95,13 +107,13 @@ void OpenCVWidget::detectFace(IplImage *cvImage) {
     cvEqualizeHist(smallImage, smallImage);         // Grays smoothing (normaliza brillo, incrementa contraste)
     cvClearMemStorage(mStorage);
 
-    if(mCascade) {
+    if(mCascade) {                                  // It isn't necessary in this context, because mCascade exist if we reach this point
         double timeElapsed = (double)cvGetTickCount();
         CvSeq *faces = cvHaarDetectObjects(smallImage, mCascade, mStorage, 1.1, 2, 0
                                            //| CV_HAAR_FIND_BIGGEST_OBJECT
-                                           | CV_HAAR_DO_ROUGH_SEARCH
+                                           //| CV_HAAR_DO_ROUGH_SEARCH
                                            //| CV_HAAR_DO_CANNY_PRUNING
-                                           | CV_HAAR_SCALE_IMAGE
+                                           //| CV_HAAR_SCALE_IMAGE
                                            , cvSize(30, 30));
         timeElapsed = (double)cvGetTickCount() - timeElapsed;
 
@@ -111,6 +123,8 @@ void OpenCVWidget::detectFace(IplImage *cvImage) {
             rect = (CvRect*)cvGetSeqElem(faces, i);
             listRect.append(QRect(rect->x * scale, rect->y * scale, rect->width * scale, rect->height * scale));
         }
+    } else {
+        qDebug() << "fatal error";
     }
 
     cvReleaseImage(&grayImage);

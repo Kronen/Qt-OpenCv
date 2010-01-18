@@ -1,7 +1,9 @@
 #include "camerawindow.h"
 
-#include <QFileInfo>
+#include <QFileDialog>
+#include <QMessageBox>
 #include <QtDebug>
+
 
 CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
     cvWidget = new OpenCVWidget(this);
@@ -10,11 +12,11 @@ CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
 
     setWindowIcon(QIcon(":/images/OpenCV.ico"));
     createActions();
+    createMenu();
     createToolBar();
     createStatusBar();
 
     writingVideo = false;
-    detectingFaces = false;
 }
 
 void CameraWindow::takeScreenshot() {
@@ -55,15 +57,28 @@ bool CameraWindow::isWritingVideo() {
 }
 
 void CameraWindow::detectFaces() {
-    if(!detectingFaces) {
-        detectingFaces = true;
-        cvWidget->setDetectFaces(detectingFaces);
-    } else {
-        detectingFaces = false;
-        cvWidget->setDetectFaces(detectingFaces);
-    }
+    if(!detectFacesAction->isChecked()) cvWidget->setDetectFaces(true);
+        else cvWidget->setDetectFaces(false);
 }
 
+void CameraWindow::setCascadeFile() {
+    QString cascadeFile = QFileDialog::getOpenFileName(this,
+                                                    tr("Choose Cascade File"),
+                                                    "./haarcascades",
+                                                    tr("Cascade Files (*.xml)"));
+    if(!cascadeFile.isNull()) cvWidget->setCascadeFile(cascadeFile);
+    detectFacesAction->setEnabled(true);
+}
+
+void CameraWindow::createMenu() {
+    optionsMenu = menuBar()->addMenu(tr("&Options"));
+    optionsMenu->addAction(cascadeFileAction);
+    optionsMenu->addSeparator();
+    optionsMenu->addAction(findBiggestObjectAction);
+    optionsMenu->addAction(doRoughSearchAction);
+    optionsMenu->addAction(doCannyPruningAction);
+    optionsMenu->addAction(scaleImageAction);
+}
 
 void CameraWindow::createToolBar() {
     toolBar = addToolBar(tr("&File"));
@@ -71,7 +86,7 @@ void CameraWindow::createToolBar() {
     toolBar->addSeparator();
     toolBar->addAction(screenshotAction);
     toolBar->addAction(videoAction);
-    toolBar->addAction(detectfacesAction);
+    toolBar->addAction(detectFacesAction);
 }
 
 void CameraWindow::createStatusBar() {
@@ -95,23 +110,37 @@ void CameraWindow::createActions() {
 
     screenshotAction = new QAction(tr("Take &Screenshot"), this);
     screenshotAction->setIcon(QIcon(":/images/icon_screenshot.png"));
-    screenshotAction->setShortcut(tr("F5"));
+    screenshotAction->setShortcut(tr("F4"));
     screenshotAction->setStatusTip(tr("Take a screenshot from the camera"));
     connect(screenshotAction, SIGNAL(triggered()), this, SLOT(takeScreenshot()));
 
     videoAction = new QAction(tr("Grab a &Video"), this);
     videoAction->setIcon(QIcon(":/images/icon_video.png"));
-    videoAction->setShortcut(tr("F6"));
+    videoAction->setShortcut(tr("F5"));
     videoAction->setStatusTip(tr("Record a video from the camera"));
     videoAction->setCheckable(true);
     connect(videoAction, SIGNAL(triggered()), this, SLOT(writeVideo()));
 
-    detectfacesAction = new QAction(tr("Detect &Faces"), this);
-    detectfacesAction->setIcon(QIcon(":/images/icon_detectfaces.png"));
-    detectfacesAction->setShortcut(tr("F6"));
-    detectfacesAction->setStatusTip(tr("Detect the faces on the camera image"));
-    detectfacesAction->setCheckable(true);
-    connect(detectfacesAction, SIGNAL(triggered()), this, SLOT(detectFaces()));
+    detectFacesAction = new QAction(tr("Detect &Faces"), this);
+    detectFacesAction->setIcon(QIcon(":/images/icon_detectfaces.png"));
+    detectFacesAction->setShortcut(tr("F6"));
+    detectFacesAction->setStatusTip(tr("Detect the faces on the camera image"));
+    detectFacesAction->setCheckable(true);
+    detectFacesAction->setEnabled(false);
+    connect(detectFacesAction, SIGNAL(triggered()), this, SLOT(detectFaces()));
+
+    cascadeFileAction = new QAction(tr("Set a &Cascade File"), this);
+    cascadeFileAction->setStatusTip(tr("Set a cascade file for detecting faces"));    
+    connect(cascadeFileAction, SIGNAL(triggered()), this, SLOT(setCascadeFile()));
+
+    findBiggestObjectAction = new QAction(tr("Only find the &Biggest Object"), this);
+    findBiggestObjectAction->setCheckable(true);
+    doRoughSearchAction = new QAction(tr("Activate &Rough Search"), this);
+    doRoughSearchAction->setCheckable(true);
+    doCannyPruningAction = new QAction(tr("Activate Canny &Pruning"), this);
+    doCannyPruningAction->setCheckable(true);
+    scaleImageAction = new QAction(tr("Scales the &Image"), this);
+    scaleImageAction->setCheckable(true);
 }
 
 void CameraWindow::cerrar() {

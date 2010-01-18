@@ -22,6 +22,8 @@ public:
     void videoWrite(QString filename);
     void videoStop();
     void setDetectFaces(bool);
+    void setCascadeFile(QString cascadeFile);
+    QString cascadeFile();
 
     QImage image() const;
     QSize sizeHint() const;    
@@ -46,6 +48,7 @@ private:
 
     CvMemStorage *mStorage;
     CvHaarClassifierCascade *mCascade;
+    QString mCascadeFile;
     QVector<QRect> listRect;
     bool mDetectFaces;
 

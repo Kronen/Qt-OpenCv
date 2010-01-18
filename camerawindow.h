@@ -2,6 +2,7 @@
 #define CAMERAWINDOW_H
 
 #include <QtGui/QMainWindow>
+#include <QtGui/QMenuBar>
 #include <QtGui/QToolBar>
 #include <QtGui/QStatusBar>
 #include <QtGui/QAction>
@@ -18,29 +19,36 @@ class CameraWindow : public QMainWindow {
         CameraWindow(QWidget *parent = 0);
 
     private:
-        void createStatusBar();
-        void createToolBar();
         void createActions();
+        void createMenu();
+        void createToolBar();
+        void createStatusBar();
 
     private slots:
         void takeScreenshot();
         void writeVideo();
         bool isWritingVideo();
         void detectFaces();
+        void setCascadeFile();
         void cerrar();
 
     private:
         OpenCVWidget *cvWidget;
         bool writingVideo;
-        bool detectingFaces;
 
-        QLabel *statusLabel;
+        QMenu *optionsMenu;
         QToolBar *toolBar;
+        QLabel *statusLabel;        
 
         QAction *quitAction;
         QAction *screenshotAction;
         QAction *videoAction;
-        QAction *detectfacesAction;
+        QAction *detectFacesAction;
+        QAction *cascadeFileAction;
+        QAction *findBiggestObjectAction;
+        QAction *doRoughSearchAction;
+        QAction *doCannyPruningAction;
+        QAction *scaleImageAction;
 };
 
 #endif // CAMERAWINDOW_H

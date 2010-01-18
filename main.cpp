@@ -1,7 +1,5 @@
 #include <QtGui/QApplication>
-#include <cv.h>
-#include <highgui.h>
-#include "opencvwidget.h"
+
 #include "camerawindow.h"
 
 int main(int argc, char *argv[]) {
