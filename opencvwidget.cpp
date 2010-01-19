@@ -77,8 +77,9 @@ void OpenCVWidget::paintEvent(QPaintEvent *event) {
     if(!listRect.empty()) {
         QPen pen(palette().dark().color(), 3, Qt::SolidLine, Qt::FlatCap, Qt::BevelJoin);
         painter.setPen(pen);
-        foreach(QRect rect, listRect) painter.drawRect(rect);        
-    }
+        foreach(QRect rect, listRect) painter.drawRect(rect);
+        listRect.clear();
+    }    
 }
 
 QString OpenCVWidget::cascadeFile() {
@@ -114,12 +115,11 @@ void OpenCVWidget::detectFace(IplImage *cvImage) {
 
     if(mCascade) {                                  // It isn't necessary in this context, because mCascade exist if we reach this point
         double timeElapsed = (double)cvGetTickCount();
-        CvSeq *faces = cvHaarDetectObjects(smallImage, mCascade, mStorage, 1.1, 2, mFlags, cvSize(40, 40));
+        CvSeq *faces = cvHaarDetectObjects(smallImage, mCascade, mStorage, 1.1, 3, mFlags, cvSize(40, 40));
         timeElapsed = (double)cvGetTickCount() - timeElapsed;
 
         qDebug() << QString("detection time = %1").arg(timeElapsed/((double)cvGetTickFrequency()*1000));
 
-        listRect.clear();
         for(int i = 0; i < faces->total; i++) {
             rect = (CvRect*)cvGetSeqElem(faces, i);
             listRect.append(QRect(rect->x * scale, rect->y * scale, rect->width * scale, rect->height * scale));
