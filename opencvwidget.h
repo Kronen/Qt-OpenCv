@@ -23,6 +23,7 @@ public:
     void videoStop();
     void setDetectFaces(bool);
     void setCascadeFile(QString cascadeFile);
+    void setFlags(int flags);
     QString cascadeFile();
 
     QImage image() const;
@@ -51,6 +52,7 @@ private:
     QString mCascadeFile;
     QVector<QRect> listRect;
     bool mDetectFaces;
+    int mFlags;
 
     CvVideoWriter *mVideoWriter;
 

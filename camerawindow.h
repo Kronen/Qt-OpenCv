@@ -8,8 +8,6 @@
 #include <QtGui/QAction>
 #include <QtGui/QLabel>
 
-#include <cv.h>
-#include <highgui.h>
 #include "opencvwidget.h"
 
 class CameraWindow : public QMainWindow {
@@ -30,6 +28,7 @@ class CameraWindow : public QMainWindow {
         bool isWritingVideo();
         void detectFaces();
         void setCascadeFile();
+        void setFlags();
         void cerrar();
 
     private:
@@ -37,6 +36,7 @@ class CameraWindow : public QMainWindow {
         bool writingVideo;
 
         QMenu *optionsMenu;
+        QMenu *flagsMenu;
         QToolBar *toolBar;
         QLabel *statusLabel;        
 

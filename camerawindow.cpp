@@ -57,7 +57,7 @@ bool CameraWindow::isWritingVideo() {
 }
 
 void CameraWindow::detectFaces() {
-    if(!detectFacesAction->isChecked()) cvWidget->setDetectFaces(true);
+    if(detectFacesAction->isChecked()) cvWidget->setDetectFaces(true);
         else cvWidget->setDetectFaces(false);
 }
 
@@ -70,14 +70,24 @@ void CameraWindow::setCascadeFile() {
     detectFacesAction->setEnabled(true);
 }
 
+void CameraWindow::setFlags() {
+    int flags = 0;
+    if(findBiggestObjectAction->isChecked()) flags |= CV_HAAR_FIND_BIGGEST_OBJECT;
+    if(doRoughSearchAction->isChecked()) flags |= CV_HAAR_DO_ROUGH_SEARCH;
+    if(doCannyPruningAction->isChecked()) flags |= CV_HAAR_DO_CANNY_PRUNING;
+    if(scaleImageAction->isChecked()) flags |= CV_HAAR_SCALE_IMAGE;
+    cvWidget->setFlags(flags);
+}
+
 void CameraWindow::createMenu() {
     optionsMenu = menuBar()->addMenu(tr("&Options"));
     optionsMenu->addAction(cascadeFileAction);
     optionsMenu->addSeparator();
-    optionsMenu->addAction(findBiggestObjectAction);
-    optionsMenu->addAction(doRoughSearchAction);
-    optionsMenu->addAction(doCannyPruningAction);
-    optionsMenu->addAction(scaleImageAction);
+    flagsMenu = optionsMenu->addMenu(tr("&Flags"));
+    flagsMenu->addAction(findBiggestObjectAction);
+    flagsMenu->addAction(doCannyPruningAction);
+    flagsMenu->addAction(scaleImageAction);
+    flagsMenu->addAction(doRoughSearchAction);
 }
 
 void CameraWindow::createToolBar() {
@@ -133,14 +143,22 @@ void CameraWindow::createActions() {
     cascadeFileAction->setStatusTip(tr("Set a cascade file for detecting faces"));    
     connect(cascadeFileAction, SIGNAL(triggered()), this, SLOT(setCascadeFile()));
 
+    // SubMenu Flags
     findBiggestObjectAction = new QAction(tr("Only find the &Biggest Object"), this);
     findBiggestObjectAction->setCheckable(true);
+    connect(findBiggestObjectAction, SIGNAL(triggered()), this, SLOT(setFlags()));
+
     doRoughSearchAction = new QAction(tr("Activate &Rough Search"), this);
     doRoughSearchAction->setCheckable(true);
+    connect(doRoughSearchAction, SIGNAL(triggered()), this, SLOT(setFlags()));
+
     doCannyPruningAction = new QAction(tr("Activate Canny &Pruning"), this);
     doCannyPruningAction->setCheckable(true);
+    connect(doCannyPruningAction, SIGNAL(triggered()), this, SLOT(setFlags()));
+
     scaleImageAction = new QAction(tr("Scales the &Image"), this);
     scaleImageAction->setCheckable(true);
+    connect(scaleImageAction, SIGNAL(triggered()), this, SLOT(setFlags()));
 }
 
 void CameraWindow::cerrar() {
