@@ -12,10 +12,10 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
         IplImage* frame = cvQueryFrame(mCamera);
 
         mFps = cvGetCaptureProperty(mCamera, CV_CAP_PROP_FPS);
-        qDebug() << mFps;
         mFps = (mFps > 0) ? mFps : 17;
 
         mDetectFaces = false;
+        mCascade = 0;
         mFlags = 0;
         mVideoWriter = 0;
 
@@ -44,6 +44,7 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
 }
 
 OpenCVWidget::~OpenCVWidget() {
+    if(mCascade) cvReleaseHaarClassifierCascade(&mCascade);
     cvReleaseCapture(&mCamera);
 }
 
@@ -81,14 +82,13 @@ void OpenCVWidget::videoStop() {
 void OpenCVWidget::paintEvent(QPaintEvent *event) {
     QPainter painter(this);
 
-    if(!mImage.isNull()) {
-        painter.drawPixmap(0, 0, QPixmap::fromImage(mImage));
-    }
+    if(!mImage.isNull()) painter.drawPixmap(0, 0, QPixmap::fromImage(mImage));
 
     if(!listRect.empty()) {
         QPen pen(palette().dark().color(), 3, Qt::SolidLine, Qt::FlatCap, Qt::BevelJoin);
         painter.setPen(pen);
         foreach(QRect rect, listRect) painter.drawRect(rect);
+        // Clean the list when we have painted the rects
         listRect.clear();
     }    
 }
@@ -103,6 +103,7 @@ void OpenCVWidget::setDetectFaces(bool detect) {
 
 void OpenCVWidget::setCascadeFile(QString cascadeFile) {
     mCascadeFile = cascadeFile;
+    if(mCascade) cvReleaseHaarClassifierCascade(&mCascade);
     mCascade = (CvHaarClassifierCascade*)cvLoad(mCascadeFile.toLatin1(), 0, 0, 0);
 }
 
@@ -147,7 +148,7 @@ void OpenCVWidget::detectFace(IplImage *cvImage) {
 
     if(mCascade) {                                  // It isn't necessary in this context, because mCascade exist if we reach this point
         double timeElapsed = (double)cvGetTickCount();
-        CvSeq *faces = cvHaarDetectObjects(smallImage, mCascade, mStorage, 1.2, 3, mFlags, cvSize(40, 40));
+        CvSeq *faces = cvHaarDetectObjects(smallImage, mCascade, mStorage, 1.2, 3, mFlags, cvSize(64, 64));
         timeElapsed = (double)cvGetTickCount() - timeElapsed;
 
         qDebug() << QString("detection time = %1").arg(timeElapsed/((double)cvGetTickFrequency()*1000));
