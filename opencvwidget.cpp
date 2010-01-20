@@ -33,8 +33,7 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
 
         // We try to load a default cascade file
         QFileInfo cascadeFile("haarcascades/haarcascade_frontalface_alt2.xml");
-        mCascadeFile = cascadeFile.exists() ? cascadeFile.absoluteFilePath() : "";
-        setCascadeFile(mCascadeFile);
+        if(cascadeFile.exists()) setCascadeFile(cascadeFile.absoluteFilePath());
 
         // We call queryFrame 'mFps' times per second
         mTimer = new QTimer(this);
