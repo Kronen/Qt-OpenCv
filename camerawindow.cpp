@@ -33,17 +33,15 @@ void CameraWindow::takeScreenshot() {
 
 void CameraWindow::writeVideo() {
     if(videoAction->isChecked()) {
-        qDebug() << "Writing Video";
         videoAction->setIcon(QIcon(":/images/icon_stopvideo.png"));
 
         quint8 i = 1;
-        QString filename = QString("webcamVideo%1.avi").arg(i);
+        QString filename = QString("webcamVid%1.avi").arg(i);
         while(QFileInfo(filename).exists())
-            filename = QString("webcamVideo%1.avi").arg(i++);
+            filename = QString("webcamVid%1.avi").arg(i++);
 
         cvWidget->videoWrite(filename);
     } else {
-        qDebug() << "Stop Writing Video";
         videoAction->setIcon(QIcon(":/images/icon_video.png"));
         cvWidget->videoStop();
     }
