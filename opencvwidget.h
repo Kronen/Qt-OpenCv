@@ -40,15 +40,13 @@ private slots:
 
 private:
     CvCapture *mCamera;
+    double fps;
 
     IplImage *mCvImage;
     QImage mImage;
 
-    int w, h;
-    int fps;
-
-    CvMemStorage *mStorage;
     CvHaarClassifierCascade *mCascade;
+    CvMemStorage *mStorage;
     QString mCascadeFile;
     QVector<QRect> listRect;
     bool mDetectFaces;

@@ -7,6 +7,7 @@
 #include <QtGui/QStatusBar>
 #include <QtGui/QAction>
 #include <QtGui/QLabel>
+#include <QtGui/QCloseEvent>
 
 #include "opencvwidget.h"
 
@@ -29,7 +30,10 @@ class CameraWindow : public QMainWindow {
         void detectFaces();
         void setCascadeFile();
         void setFlags();
-        void cerrar();
+        void unsetFlags();
+
+    protected:
+        virtual void closeEvent(QCloseEvent *event);
 
     private:
         OpenCVWidget *cvWidget;
@@ -49,6 +53,7 @@ class CameraWindow : public QMainWindow {
         QAction *doRoughSearchAction;
         QAction *doCannyPruningAction;
         QAction *scaleImageAction;
+        QAction *unsetFlagsAction;
 };
 
 #endif // CAMERAWINDOW_H

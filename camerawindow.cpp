@@ -16,6 +16,9 @@ CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
     createToolBar();
     createStatusBar();
 
+    if(!(cvWidget->cascadeFile().isEmpty())) detectFacesAction->setEnabled(true);
+
+
     writingVideo = false;
 }
 
@@ -66,17 +69,44 @@ void CameraWindow::setCascadeFile() {
                                                     tr("Choose Cascade File"),
                                                     "./haarcascades",
                                                     tr("Cascade Files (*.xml)"));
+
     if(!cascadeFile.isNull()) cvWidget->setCascadeFile(cascadeFile);
     detectFacesAction->setEnabled(true);
 }
 
 void CameraWindow::setFlags() {
     int flags = 0;
-    if(findBiggestObjectAction->isChecked()) flags |= CV_HAAR_FIND_BIGGEST_OBJECT;
-    if(doRoughSearchAction->isChecked()) flags |= CV_HAAR_DO_ROUGH_SEARCH;
-    if(doCannyPruningAction->isChecked()) flags |= CV_HAAR_DO_CANNY_PRUNING;
-    if(scaleImageAction->isChecked()) flags |= CV_HAAR_SCALE_IMAGE;
+
+    findBiggestObjectAction->setEnabled(!(scaleImageAction->isChecked() || doCannyPruningAction->isChecked()));
+    doRoughSearchAction->setEnabled(findBiggestObjectAction->isChecked());
+    doCannyPruningAction->setEnabled(!(findBiggestObjectAction->isChecked() || scaleImageAction->isChecked()));
+    scaleImageAction->setEnabled(!(findBiggestObjectAction->isChecked() || doCannyPruningAction->isChecked()));
+
+
+    if(scaleImageAction->isChecked()) {
+        flags |= CV_HAAR_SCALE_IMAGE;
+    } else {
+        if(findBiggestObjectAction->isChecked()) {
+            flags |= CV_HAAR_FIND_BIGGEST_OBJECT;
+            if(doRoughSearchAction->isChecked()) {
+                flags |= CV_HAAR_DO_ROUGH_SEARCH;
+            }
+        } else {
+            if(doCannyPruningAction->isChecked()) {
+                flags |= CV_HAAR_DO_CANNY_PRUNING;
+            }
+        }
+    }
+
     cvWidget->setFlags(flags);
+}
+
+void CameraWindow::unsetFlags() {
+    findBiggestObjectAction->setChecked(false);
+    doRoughSearchAction->setChecked(false);
+    doCannyPruningAction->setChecked(false);
+    scaleImageAction->setChecked(false);
+    setFlags();
 }
 
 void CameraWindow::createMenu() {
@@ -85,9 +115,13 @@ void CameraWindow::createMenu() {
     optionsMenu->addSeparator();
     flagsMenu = optionsMenu->addMenu(tr("&Flags"));
     flagsMenu->addAction(findBiggestObjectAction);
-    flagsMenu->addAction(doCannyPruningAction);
-    flagsMenu->addAction(scaleImageAction);
     flagsMenu->addAction(doRoughSearchAction);
+    flagsMenu->addSeparator();
+    flagsMenu->addAction(doCannyPruningAction);
+    flagsMenu->addSeparator();
+    flagsMenu->addAction(scaleImageAction);
+    flagsMenu->addSeparator();
+    flagsMenu->addAction(unsetFlagsAction);
 }
 
 void CameraWindow::createToolBar() {
@@ -116,7 +150,7 @@ void CameraWindow::createActions() {
     quitAction->setIcon(QIcon(":/images/icon_quit.png"));
     quitAction->setShortcut(QKeySequence::Quit);
     quitAction->setStatusTip(tr("Exit the application"));
-    connect(quitAction, SIGNAL(triggered()), this, SLOT(cerrar()));
+    connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 
     screenshotAction = new QAction(tr("Take &Screenshot"), this);
     screenshotAction->setIcon(QIcon(":/images/icon_screenshot.png"));
@@ -148,8 +182,9 @@ void CameraWindow::createActions() {
     findBiggestObjectAction->setCheckable(true);
     connect(findBiggestObjectAction, SIGNAL(triggered()), this, SLOT(setFlags()));
 
-    doRoughSearchAction = new QAction(tr("Activate &Rough Search"), this);
+    doRoughSearchAction = new QAction(tr("  Activate &Rough Search"), this);
     doRoughSearchAction->setCheckable(true);
+    doRoughSearchAction->setEnabled(false);
     connect(doRoughSearchAction, SIGNAL(triggered()), this, SLOT(setFlags()));
 
     doCannyPruningAction = new QAction(tr("Activate Canny &Pruning"), this);
@@ -159,9 +194,12 @@ void CameraWindow::createActions() {
     scaleImageAction = new QAction(tr("Scales the &Image"), this);
     scaleImageAction->setCheckable(true);
     connect(scaleImageAction, SIGNAL(triggered()), this, SLOT(setFlags()));
+
+    unsetFlagsAction = new QAction(tr("&Unset All Flags"), this);
+    connect(unsetFlagsAction, SIGNAL(triggered()), this, SLOT(unsetFlags()));
 }
 
-void CameraWindow::cerrar() {
+void CameraWindow::closeEvent(QCloseEvent *event) {
     delete cvWidget;
-    close();
-}
+    event->accept();
+ }

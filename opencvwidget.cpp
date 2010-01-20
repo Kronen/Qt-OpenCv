@@ -7,7 +7,9 @@
 OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
     mCamera = cvCreateCameraCapture(0);
     mVideoWriter = 0;
-    fps = 17;
+
+    fps = cvGetCaptureProperty(mCamera, CV_CAP_PROP_FPS);
+    fps = (fps > 0) ? fps : 17;
 
     mDetectFaces = false;
     mFlags = 0;
@@ -31,7 +33,12 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
 
     // Storage for the rectangles detected
     mStorage = cvCreateMemStorage(0);
-    mCascadeFile = "";
+
+    // We try to load a default cascade file
+    //QFileInfo cascadeFile("haarcascades/haarcascade_frontalface_alt2.xml");
+    //mCascadeFile = cascadeFile.exists() ? cascadeFile.absoluteFilePath() : "";
+    //setCascadeFile(mCascadeFile);
+    mCascadeFile ="";
 
     mTimer = new QTimer(this);
     connect(mTimer, SIGNAL(timeout()), this, SLOT(queryFrame()));
@@ -39,7 +46,6 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
 }
 
 OpenCVWidget::~OpenCVWidget() {
-    delete mCascade;
     cvReleaseCapture(&mCamera);
 }
 
@@ -86,9 +92,12 @@ QString OpenCVWidget::cascadeFile() {
     return mCascadeFile;
 }
 
+void OpenCVWidget::setDetectFaces(bool detect) {
+    mDetectFaces = detect;
+}
+
 void OpenCVWidget::setCascadeFile(QString cascadeFile) {
     mCascadeFile = cascadeFile;
-    if(mCascade) delete mCascade;
     mCascade = (CvHaarClassifierCascade*)cvLoad(mCascadeFile.toLatin1(), 0, 0, 0);
 }
 
@@ -96,9 +105,27 @@ void OpenCVWidget::setFlags(int flags) {
     mFlags = flags;
 }
 
-void OpenCVWidget::setDetectFaces(bool detect) {
-    mDetectFaces = detect;
-}
+/*
+Possible values for mFlags on cvHaarDetectObjects. It can be a combination of zero or more of the following values:
+
+        * CV_HAAR_SCALE_IMAGE- for each scale factor used the function will downscale the image rather than “zoom”
+            the feature coordinates in the classifier cascade. Currently, the option can only be used alone,
+            i.e. the flag can not be set together with the others.
+        * CV_HAAR_DO_CANNY_PRUNING- If it is set, the function uses Canny edge detector to reject some image regions
+            that contain too few or too much edges and thus can not contain the searched object. The particular
+            threshold values are tuned for face detection and in this case the pruning speeds up the processing.
+        * CV_HAAR_FIND_BIGGEST_OBJECT- If it is set, the function finds the largest object (if any) in the image.
+            That is, the output sequence will contain one (or zero) element(s).
+        * CV_HAAR_DO_ROUGH_SEARCH- It should be used only when CV_HAAR_FIND_BIGGEST_OBJECT is set and min_neighbors > 0.
+            If the flag is set, the function does not look for candidates of a smaller size as soon as it has found the
+            object (with enough neighbor candidates) at the current scale. Typically, when min_neighbors is fixed, the
+            mode yields less accurate (a bit larger) object rectangle than the regular single-object mode
+            (CV_HAAR_FIND_BIGGEST_OBJECT), but it is much faster, up to an order of magnitude. A greater value of
+            min_neighbors may be specified to improve the accuracy.
+
+Note, that in single-object mode CV_HAAR_DO_CANNY_PRUNING does not improve performance much and can even slow down the
+processing.
+*/
 
 void OpenCVWidget::detectFace(IplImage *cvImage) {
     CvRect *rect = NULL;
@@ -115,7 +142,7 @@ void OpenCVWidget::detectFace(IplImage *cvImage) {
 
     if(mCascade) {                                  // It isn't necessary in this context, because mCascade exist if we reach this point
         double timeElapsed = (double)cvGetTickCount();
-        CvSeq *faces = cvHaarDetectObjects(smallImage, mCascade, mStorage, 1.1, 3, mFlags, cvSize(40, 40));
+        CvSeq *faces = cvHaarDetectObjects(smallImage, mCascade, mStorage, 1.2, 3, mFlags, cvSize(40, 40));
         timeElapsed = (double)cvGetTickCount() - timeElapsed;
 
         qDebug() << QString("detection time = %1").arg(timeElapsed/((double)cvGetTickFrequency()*1000));
