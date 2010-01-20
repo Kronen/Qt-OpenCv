@@ -19,6 +19,7 @@ public:
     OpenCVWidget(QWidget *parent = 0);
     ~OpenCVWidget();
 
+    bool isCaptureActive();
     void videoWrite(QString filename);
     void videoStop();
     void setDetectFaces(bool);
@@ -40,7 +41,7 @@ private slots:
 
 private:
     CvCapture *mCamera;
-    double fps;
+    double mFps;
 
     IplImage *mCvImage;
     QImage mImage;

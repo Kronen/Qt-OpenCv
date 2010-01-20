@@ -5,54 +5,59 @@
 #include <QMessageBox>
 
 OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
-    mCamera = cvCreateCameraCapture(0);
-    mVideoWriter = 0;
+    mCamera = cvCaptureFromCAM(CV_CAP_ANY);
 
-    fps = cvGetCaptureProperty(mCamera, CV_CAP_PROP_FPS);
-    fps = (fps > 0) ? fps : 17;
+    if(mCamera) {
+        // We get a query frame to initialize the capture and to get the frame's dimensions
+        IplImage* frame = cvQueryFrame(mCamera);
 
-    mDetectFaces = false;
-    mFlags = 0;
+        mFps = cvGetCaptureProperty(mCamera, CV_CAP_PROP_FPS);
+        qDebug() << mFps;
+        mFps = (mFps > 0) ? mFps : 17;
 
-    // We get a query frame to initialize the capture and to get the frame's dimensions
-    IplImage* frame = cvQueryFrame(mCamera);
+        mDetectFaces = false;
+        mFlags = 0;
+        mVideoWriter = 0;
 
-    // QImage to draw on paint event
-    mImage = QImage(QSize(frame->width, frame->height), QImage::Format_RGB888);
+        // QImage to draw on paint event
+        mImage = QImage(QSize(frame->width, frame->height), QImage::Format_RGB888);
 
-    // IplImage * to work with OpenCV functions
-    mCvImage = cvCreateImageHeader(cvSize(frame->width, frame->height), frame->depth, frame->nChannels);
+        // IplImage * to work with OpenCV functions
+        mCvImage = cvCreateImageHeader(cvSize(frame->width, frame->height), frame->depth, frame->nChannels);
 
-    // We share the buffer between QImage and IplImage *
-    mCvImage->imageData = (char *)mImage.bits();
+        // We share the buffer between QImage and IplImage *
+        mCvImage->imageData = (char *)mImage.bits();
 
-    // We copy the frame to our buffer(fliping it if necessary) and then we convert it from BGR to RGB
-    if(frame->origin == IPL_ORIGIN_TL) cvCopy(frame, mCvImage, 0);
-        else cvFlip(frame, mCvImage, 0);
-    cvCvtColor(mCvImage, mCvImage, CV_BGR2RGB);
+        // Storage for the rectangles detected
+        mStorage = cvCreateMemStorage(0);
 
-    // Storage for the rectangles detected
-    mStorage = cvCreateMemStorage(0);
+        // We try to load a default cascade file
+        QFileInfo cascadeFile("haarcascades/haarcascade_frontalface_alt2.xml");
+        mCascadeFile = cascadeFile.exists() ? cascadeFile.absoluteFilePath() : "";
+        setCascadeFile(mCascadeFile);
 
-    // We try to load a default cascade file
-    //QFileInfo cascadeFile("haarcascades/haarcascade_frontalface_alt2.xml");
-    //mCascadeFile = cascadeFile.exists() ? cascadeFile.absoluteFilePath() : "";
-    //setCascadeFile(mCascadeFile);
-    mCascadeFile ="";
-
-    mTimer = new QTimer(this);
-    connect(mTimer, SIGNAL(timeout()), this, SLOT(queryFrame()));
-    mTimer->start(1000/fps);
+        // We call queryFrame 'mFps' times per second
+        mTimer = new QTimer(this);
+        connect(mTimer, SIGNAL(timeout()), this, SLOT(queryFrame()));
+        mTimer->start(1000/mFps);
+    }
 }
 
 OpenCVWidget::~OpenCVWidget() {
     cvReleaseCapture(&mCamera);
 }
 
+bool OpenCVWidget::isCaptureActive() {
+    if(!mCamera) return false;
+    return true;
+}
+
 void OpenCVWidget::queryFrame() {
     IplImage* frame = cvQueryFrame(mCamera);
     if(!frame) return;    
 
+    // We copy the frame to our buffer(fliping it if necessary) and then we convert it from BGR to RGB
+    // (QImage works with RGB and cvQueryFrame returns a BGR IplImage)
     if(frame->origin == IPL_ORIGIN_TL) cvCopy(frame, mCvImage, 0);
         else cvFlip(frame, mCvImage, 0);
     cvCvtColor(mCvImage, mCvImage, CV_BGR2RGB);
@@ -66,7 +71,7 @@ void OpenCVWidget::queryFrame() {
 
 void OpenCVWidget::videoWrite(QString filename) {
     CvSize size = cvGetSize(mCvImage);
-    mVideoWriter = cvCreateVideoWriter(filename.toLatin1(), CV_FOURCC('D','I','V','X'), (fps < 10) ? 5 : fps/2, size);
+    mVideoWriter = cvCreateVideoWriter(filename.toLatin1(), CV_FOURCC('D','I','V','X'), (mFps < 10) ? 5 : mFps/2, size);
 }
 
 void OpenCVWidget::videoStop() {

@@ -11,12 +11,23 @@ CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
     setCentralWidget(cvWidget);
 
     setWindowIcon(QIcon(":/images/OpenCV.ico"));
+
     createActions();
     createMenu();
     createToolBar();
     createStatusBar();
 
-    if(!(cvWidget->cascadeFile().isEmpty())) detectFacesAction->setEnabled(true);
+    if(!cvWidget->isCaptureActive()) {
+        QMessageBox::warning(this, tr("OpenCV + Qt"),
+                                        tr("Can't detect a camera connected to the PC.\n"
+                                           "The program doesn't provide any option\n"
+                                           "to configure the device\n"),
+                                        QMessageBox::Close);
+
+        videoAction->setEnabled(false);
+        screenshotAction->setEnabled(false);
+        optionsMenu->setEnabled(false);
+    } else if(!cvWidget->cascadeFile().isEmpty()) detectFacesAction->setEnabled(true);
 }
 
 void CameraWindow::takeScreenshot() {
