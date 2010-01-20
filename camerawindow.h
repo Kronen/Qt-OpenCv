@@ -26,7 +26,6 @@ class CameraWindow : public QMainWindow {
     private slots:
         void takeScreenshot();
         void writeVideo();
-        bool isWritingVideo();
         void detectFaces();
         void setCascadeFile();
         void setFlags();
@@ -37,12 +36,11 @@ class CameraWindow : public QMainWindow {
 
     private:
         OpenCVWidget *cvWidget;
-        bool writingVideo;
 
         QMenu *optionsMenu;
         QMenu *flagsMenu;
         QToolBar *toolBar;
-        QLabel *statusLabel;        
+        QLabel *statusLabel;
 
         QAction *quitAction;
         QAction *screenshotAction;

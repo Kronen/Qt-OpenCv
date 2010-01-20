@@ -17,9 +17,6 @@ CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
     createStatusBar();
 
     if(!(cvWidget->cascadeFile().isEmpty())) detectFacesAction->setEnabled(true);
-
-
-    writingVideo = false;
 }
 
 void CameraWindow::takeScreenshot() {
@@ -35,9 +32,8 @@ void CameraWindow::takeScreenshot() {
 }
 
 void CameraWindow::writeVideo() {
-    if(!isWritingVideo()) {
+    if(videoAction->isChecked()) {
         qDebug() << "Writing Video";
-        writingVideo = true;
         videoAction->setIcon(QIcon(":/images/icon_stopvideo.png"));
 
         quint8 i = 1;
@@ -48,15 +44,9 @@ void CameraWindow::writeVideo() {
         cvWidget->videoWrite(filename);
     } else {
         qDebug() << "Stop Writing Video";
-        writingVideo = false;
         videoAction->setIcon(QIcon(":/images/icon_video.png"));
-
         cvWidget->videoStop();
     }
-}
-
-bool CameraWindow::isWritingVideo() {
-    return writingVideo;
 }
 
 void CameraWindow::detectFaces() {
