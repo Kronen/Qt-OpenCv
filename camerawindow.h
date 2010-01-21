@@ -10,6 +10,7 @@
 #include <QtGui/QCloseEvent>
 
 #include "opencvwidget.h"
+#include "camshiftdialog.h"
 
 class CameraWindow : public QMainWindow {
     Q_OBJECT
@@ -31,12 +32,14 @@ class CameraWindow : public QMainWindow {
         void setCascadeFile();
         void setFlags();
         void unsetFlags();
+        void showCamShiftDialog();
 
     protected:
         virtual void closeEvent(QCloseEvent *event);
 
     private:
         OpenCVWidget *cvWidget;
+        CamShiftDialog *mCamShiftDialog;
 
         QMenu *optionsMenu;
         QMenu *flagsMenu;

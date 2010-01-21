@@ -55,9 +55,8 @@ CvBox2D CamShift::trackFace(IplImage *cvImage) {
     updateHueImage(cvImage);
 
     // Create a probability image based on the face histogram (precalculated on startTracking())
-    cvCalcBackProject(mHueImg, mProbImg, mHist);        // Error: Unable to restore previously selected frame
+    cvCalcBackProject(&mHueImg, mProbImg, mHist);
     cvAnd(mProbImg, mMask, mProbImg, 0);                // (src1, src2, dst, mask)
-
     CvSize size = cvGetSize(mProbImg);
 
     // Check for face out of scope
@@ -96,4 +95,12 @@ void CamShift::setVMin(int vMin) {
 
 void CamShift::setSMin(int sMin) {
     mSMin = sMin;
+}
+
+int CamShift::vMin() {
+    return mVMin;
+}
+
+int CamShift::sMin() {
+    return mSMin;
 }

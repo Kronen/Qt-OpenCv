@@ -60,6 +60,22 @@ OpenCVWidget::~OpenCVWidget() {
     cvReleaseCapture(&mCamera);
 }
 
+void OpenCVWidget::setCamShiftVMin(int vMin) {
+    mCamShift->setVMin(vMin);
+}
+
+void OpenCVWidget::setCamShiftSMin(int sMin) {
+    mCamShift->setSMin(sMin);
+}
+
+int OpenCVWidget::getCamShiftVMin() {
+    return mCamShift->vMin();
+}
+
+int OpenCVWidget::getCamShiftSMin() {
+   return mCamShift->sMin();
+}
+
 bool OpenCVWidget::isCaptureActive() {
     if(!mCamera) return false;
     return true;
@@ -79,18 +95,22 @@ void OpenCVWidget::queryFrame() {
     if(mDetectingFaces) mListRect = detectFaces(mCvImage);
 
     if(mTrackingFace) {
-        cvCopy(frame, mCvImage, 0);
-
-        if(mCvRect.x > 0 && mCvRect.y > 0) {
-            mCvBox = mCamShift->trackFace(mCvImage);
-        } else {
+        // Check if there is a valid rect, if there is a valid one we begin to track the face,
+        // if not we detect one first
+        if(!(mCvRect.width > 0 && mCvRect.height > 0)) {
             setFlags(CV_HAAR_FIND_BIGGEST_OBJECT);
             QVector<QRect> listRect = detectFaces(mCvImage);
+
             if(!listRect.isEmpty()) {
                 QRect trackRect = listRect.at(0);
                 mCvRect = cvRect(trackRect.x(), trackRect.y(), trackRect.width(), trackRect.height());
                 mCamShift->startTracking(mCvImage, mCvRect);
             }
+        } else {
+            mCvBox = mCamShift->trackFace(mCvImage);
+            qDebug() << mCvBox.center.x << mCvBox.center.y << mCvBox.size.width << mCvBox.size.height;
+            mListRect.append(QRect(mCvBox.center.x-(mCvBox.size.width/2), mCvBox.center.y-(mCvBox.size.height/2),
+                             mCvBox.size.width, mCvBox.size.height));
         }
     }
 
@@ -186,8 +206,8 @@ void OpenCVWidget::setDetectFaces(bool detect) {
 }
 
 void OpenCVWidget::setTrackFace(bool track) {
-    if(!track) mCvRect = cvRect(-1, -1, 0, 0);
     mTrackingFace = track;
+    if(!mTrackingFace) mCvRect = cvRect(-1, -1, 0, 0);
 }
 
 QString OpenCVWidget::cascadeFile() {

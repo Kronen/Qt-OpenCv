@@ -77,6 +77,8 @@ void CameraWindow::trackFace() {
         detectFacesAction->setChecked(false);
         cvWidget->setDetectFaces(false);
         cvWidget->setTrackFace(true);
+
+        showCamShiftDialog();
     } else cvWidget->setTrackFace(false);
 }
 
@@ -123,6 +125,20 @@ void CameraWindow::unsetFlags() {
     doCannyPruningAction->setChecked(false);
     scaleImageAction->setChecked(false);
     setFlags();
+}
+
+void CameraWindow::showCamShiftDialog() {
+    if(!mCamShiftDialog) {
+        mCamShiftDialog = new CamShiftDialog(this);
+
+        mCamShiftDialog->vMinSlider->setValue(cvWidget->getCamShiftVMin());
+        mCamShiftDialog->sMinSlider->setValue(cvWidget->getCamShiftSMin());
+
+        connect(mCamShiftDialog->vMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftSMin(int)));
+        connect(mCamShiftDialog->sMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftSMin(int)));
+    }
+
+    mCamShiftDialog->show();
 }
 
 void CameraWindow::createMenu() {

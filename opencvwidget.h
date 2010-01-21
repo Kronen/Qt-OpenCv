@@ -34,6 +34,9 @@ public:
     void setFlags(int flags);
     QString cascadeFile();
 
+    int getCamShiftSMin();
+    int getCamShiftVMin();
+
     QImage image() const;
     QSize sizeHint() const;    
 
@@ -46,6 +49,8 @@ private:
 
 private slots:
     void queryFrame();
+    void setCamShiftVMin(int vMin);
+    void setCamShiftSMin(int sMin);
 
 private:
     CvCapture *mCamera;

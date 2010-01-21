@@ -14,9 +14,12 @@ LIBS += "C:\OpenCV2.0\lib\libhighgui200.dll.a"
 SOURCES += main.cpp \
     camerawindow.cpp \
     opencvwidget.cpp \
-    camshift.cpp
+    camshift.cpp \
+    camshiftdialog.cpp
 HEADERS += camerawindow.h \
     opencvwidget.h \
     camshift.h \
-    version.h
+    version.h \
+    camshiftdialog.h
 RESOURCES += resources.qrc
+FORMS += camshiftdialog.ui
