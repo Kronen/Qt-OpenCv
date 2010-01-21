@@ -6,8 +6,11 @@
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
 #include <QTimer>
+
 #include <cv.h>
 #include <highgui.h>
+
+#include "camshift.h"
 
 class OpenCVWidget : public QWidget {
     Q_OBJECT
@@ -20,9 +23,13 @@ public:
     ~OpenCVWidget();
 
     bool isCaptureActive();
+
     void videoWrite(QString filename);
     void videoStop();
+
     void setDetectFaces(bool);
+    void setTrackFace(bool);
+
     void setCascadeFile(QString cascadeFile);
     void setFlags(int flags);
     QString cascadeFile();
@@ -34,30 +41,34 @@ protected:
     void paintEvent(QPaintEvent *event);
 
 private:
-    void detectFace(IplImage *cvImage);
+    QVector<QRect> detectFaces(IplImage *cvImage);
+    void trackFace(CvRect cvRect);
 
 private slots:
     void queryFrame();
 
 private:
     CvCapture *mCamera;
-    double mFps;
-
     IplImage *mCvImage;
     QImage mImage;
 
+    CvVideoWriter *mVideoWriter;
     CvHaarClassifierCascade *mCascade;
     CvMemStorage *mStorage;
-    QString mCascadeFile;
-    QVector<QRect> listRect;
-    bool mDetectFaces;
-    int mFlags;
+    CamShift *mCamShift;
 
-    CvVideoWriter *mVideoWriter;
+    QString mCascadeFile;
+    QVector<QRect> mListRect;
+    QRect mTrackFaceRect;
+    CvBox2D mCvBox;
+    CvRect mCvRect;
+
+    bool mDetectingFaces;
+    bool mTrackingFace;
+    double mFps;
+    int mFlags;    
 
     QTimer *mTimer;
-    double totalTime;
-    int cont;
 };
 
 #endif

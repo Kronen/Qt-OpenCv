@@ -13,7 +13,10 @@ LIBS += "C:\OpenCV2.0\lib\libhighgui200.dll.a"
 # LIBS += "C:\OpenCV2.0\lib\libcvaux200.dll.a"
 SOURCES += main.cpp \
     camerawindow.cpp \
-    opencvwidget.cpp
+    opencvwidget.cpp \
+    camshift.cpp
 HEADERS += camerawindow.h \
-    opencvwidget.h
+    opencvwidget.h \
+    camshift.h \
+    version.h
 RESOURCES += resources.qrc

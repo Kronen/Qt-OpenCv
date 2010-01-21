@@ -27,6 +27,7 @@ class CameraWindow : public QMainWindow {
         void takeScreenshot();
         void writeVideo();
         void detectFaces();
+        void trackFace();
         void setCascadeFile();
         void setFlags();
         void unsetFlags();
@@ -46,6 +47,8 @@ class CameraWindow : public QMainWindow {
         QAction *screenshotAction;
         QAction *videoAction;
         QAction *detectFacesAction;
+        QAction *trackFaceAction;
+
         QAction *cascadeFileAction;
         QAction *findBiggestObjectAction;
         QAction *doRoughSearchAction;

@@ -8,7 +8,6 @@
 CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
     cvWidget = new OpenCVWidget(this);
     cvWidget->setAttribute(Qt::WA_DeleteOnClose, true);
-    setCentralWidget(cvWidget);
 
     setWindowIcon(QIcon(":/images/OpenCV.ico"));
 
@@ -27,7 +26,12 @@ CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
         videoAction->setEnabled(false);
         screenshotAction->setEnabled(false);
         optionsMenu->setEnabled(false);
-    } else if(!cvWidget->cascadeFile().isEmpty()) detectFacesAction->setEnabled(true);
+    } else if(!cvWidget->cascadeFile().isEmpty()) {
+        detectFacesAction->setEnabled(true);
+        trackFaceAction->setEnabled(true);
+    }
+
+    setCentralWidget(cvWidget);
 }
 
 void CameraWindow::takeScreenshot() {
@@ -59,8 +63,21 @@ void CameraWindow::writeVideo() {
 }
 
 void CameraWindow::detectFaces() {
-    if(detectFacesAction->isChecked()) cvWidget->setDetectFaces(true);
-        else cvWidget->setDetectFaces(false);
+    // We don't track and detect at the same time
+    if(detectFacesAction->isChecked()) {
+        trackFaceAction->setChecked(false);
+        cvWidget->setTrackFace(false);
+        cvWidget->setDetectFaces(true);
+    } else cvWidget->setDetectFaces(false);
+}
+
+void CameraWindow::trackFace() {
+    // We don't track and detect at the same time
+    if(trackFaceAction->isChecked()) {
+        detectFacesAction->setChecked(false);
+        cvWidget->setDetectFaces(false);
+        cvWidget->setTrackFace(true);
+    } else cvWidget->setTrackFace(false);
 }
 
 void CameraWindow::setCascadeFile() {
@@ -109,10 +126,11 @@ void CameraWindow::unsetFlags() {
 }
 
 void CameraWindow::createMenu() {
-    optionsMenu = menuBar()->addMenu(tr("&Options"));
+    optionsMenu = menuBar()->addMenu(tr("&Settings"));
     optionsMenu->addAction(cascadeFileAction);
     optionsMenu->addSeparator();
-    flagsMenu = optionsMenu->addMenu(tr("&Flags"));
+
+    flagsMenu = menuBar()->addMenu(tr("&Flags"));
     flagsMenu->addAction(findBiggestObjectAction);
     flagsMenu->addAction(doRoughSearchAction);
     flagsMenu->addSeparator();
@@ -125,11 +143,13 @@ void CameraWindow::createMenu() {
 
 void CameraWindow::createToolBar() {
     toolBar = addToolBar(tr("&File"));
+    toolBar->setIconSize(QSize(32,32));
     toolBar->addAction(quitAction);
     toolBar->addSeparator();
     toolBar->addAction(screenshotAction);
     toolBar->addAction(videoAction);
     toolBar->addAction(detectFacesAction);
+    toolBar->addAction(trackFaceAction);
 }
 
 void CameraWindow::createStatusBar() {
@@ -164,13 +184,21 @@ void CameraWindow::createActions() {
     videoAction->setCheckable(true);
     connect(videoAction, SIGNAL(triggered()), this, SLOT(writeVideo()));
 
-    detectFacesAction = new QAction(tr("Detect &Faces"), this);
+    detectFacesAction = new QAction(tr("&Detect Faces"), this);
     detectFacesAction->setIcon(QIcon(":/images/icon_detectfaces.png"));
     detectFacesAction->setShortcut(tr("F6"));
-    detectFacesAction->setStatusTip(tr("Detect the faces on the camera image"));
+    detectFacesAction->setStatusTip(tr("Detect the faces for each frame of the camera"));
     detectFacesAction->setCheckable(true);
     detectFacesAction->setEnabled(false);
     connect(detectFacesAction, SIGNAL(triggered()), this, SLOT(detectFaces()));
+
+    trackFaceAction = new QAction(tr("&Track a Face"), this);
+    trackFaceAction->setIcon(QIcon(":/images/icon_detectfaces.png"));
+    trackFaceAction->setShortcut(tr("F7"));
+    trackFaceAction->setStatusTip(tr("Track a face between frames"));
+    trackFaceAction->setCheckable(true);
+    trackFaceAction->setEnabled(false);
+    connect(trackFaceAction, SIGNAL(triggered()), this, SLOT(trackFace()));
 
     cascadeFileAction = new QAction(tr("Set a &Cascade File"), this);
     cascadeFileAction->setStatusTip(tr("Set a cascade file for detecting faces"));    

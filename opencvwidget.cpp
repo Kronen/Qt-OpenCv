@@ -2,38 +2,50 @@
 
 #include <QtDebug>
 #include <QFileInfo>
-#include <QMessageBox>
 
 OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
     mCamera = cvCaptureFromCAM(CV_CAP_ANY);
 
     if(mCamera) {
-        // We get a query frame to initialize the capture and to get the frame's dimensions
-        IplImage* frame = cvQueryFrame(mCamera);
+        int w, h;
+        mDetectingFaces = false;
+        mTrackingFace = false;
+        mCascade = 0;
+        mFlags = 0;
+        mVideoWriter = 0;
+        mCvRect = cvRect(-1, -1, 0, 0);
 
         mFps = cvGetCaptureProperty(mCamera, CV_CAP_PROP_FPS);
         mFps = (mFps > 0) ? mFps : 17;
 
-        mDetectFaces = false;
-        mCascade = 0;
-        mFlags = 0;
-        mVideoWriter = 0;
-
-        // QImage to draw on paint event
-        mImage = QImage(QSize(frame->width, frame->height), QImage::Format_RGB888);
-
-        // IplImage * to work with OpenCV functions
-        mCvImage = cvCreateImageHeader(cvSize(frame->width, frame->height), frame->depth, frame->nChannels);
-
-        // We share the buffer between QImage and IplImage *
-        mCvImage->imageData = (char *)mImage.bits();
-
         // Storage for the rectangles detected
         mStorage = cvCreateMemStorage(0);
 
-        // We try to load a default cascade file
+        // Try to load a default cascade file
         QFileInfo cascadeFile("haarcascades/haarcascade_frontalface_alt2.xml");
         if(cascadeFile.exists()) setCascadeFile(cascadeFile.absoluteFilePath());
+
+        // Get a query frame to initialize the capture and to get the frame's dimensions
+        IplImage* frame = cvQueryFrame(mCamera);
+        if(!frame) {
+            w = cvGetCaptureProperty(mCamera, CV_CAP_PROP_FRAME_WIDTH);
+            h = cvGetCaptureProperty(mCamera, CV_CAP_PROP_FRAME_HEIGHT);
+        } else {
+            w = frame->width;
+            h = frame->height;
+        }
+
+        // QImage to draw on paint event
+        mImage = QImage(QSize(w, h), QImage::Format_RGB888);
+
+        // IplImage * to work with OpenCV functions
+        mCvImage = cvCreateImageHeader(cvSize(w, h), 8, 3);
+
+        // Share the buffer between QImage and IplImage *
+        mCvImage->imageData = (char *)mImage.bits();
+
+        // Init CamShift
+        mCamShift = new CamShift(cvSize(w, h));
 
         // We call queryFrame 'mFps' times per second
         mTimer = new QTimer(this);
@@ -43,6 +55,7 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
 }
 
 OpenCVWidget::~OpenCVWidget() {
+    delete mCamShift;
     if(mCascade) cvReleaseHaarClassifierCascade(&mCascade);
     cvReleaseCapture(&mCamera);
 }
@@ -54,24 +67,41 @@ bool OpenCVWidget::isCaptureActive() {
 
 void OpenCVWidget::queryFrame() {
     IplImage* frame = cvQueryFrame(mCamera);
-    if(!frame) return;    
+    if(!frame) return;
 
     // We copy the frame to our buffer(fliping it if necessary) and then we convert it from BGR to RGB
     // (QImage works with RGB and cvQueryFrame returns a BGR IplImage)
     if(frame->origin == IPL_ORIGIN_TL) cvCopy(frame, mCvImage, 0);
         else cvFlip(frame, mCvImage, 0);
-    cvCvtColor(mCvImage, mCvImage, CV_BGR2RGB);
 
     if(mVideoWriter && frame) cvWriteFrame(mVideoWriter, frame);
 
-    if(mDetectFaces) detectFace(mCvImage);
+    if(mDetectingFaces) mListRect = detectFaces(mCvImage);
 
+    if(mTrackingFace) {
+        cvCopy(frame, mCvImage, 0);
+
+        if(mCvRect.x > 0 && mCvRect.y > 0) {
+            mCvBox = mCamShift->trackFace(mCvImage);
+        } else {
+            setFlags(CV_HAAR_FIND_BIGGEST_OBJECT);
+            QVector<QRect> listRect = detectFaces(mCvImage);
+            if(!listRect.isEmpty()) {
+                QRect trackRect = listRect.at(0);
+                mCvRect = cvRect(trackRect.x(), trackRect.y(), trackRect.width(), trackRect.height());
+                mCamShift->startTracking(mCvImage, mCvRect);
+            }
+        }
+    }
+
+    // Only necesary if we are going to paint into screen because QImage uses RGB
+    cvCvtColor(mCvImage, mCvImage, CV_BGR2RGB);
     this->update();
 }
 
 void OpenCVWidget::videoWrite(QString filename) {
     CvSize size = cvGetSize(mCvImage);
-    mVideoWriter = cvCreateVideoWriter(filename.toLatin1(), CV_FOURCC('D','I','V','X'), (mFps < 10) ? 5 : mFps/2, size);
+    mVideoWriter = cvCreateVideoWriter(filename.toUtf8(), CV_FOURCC('D','I','V','X'), (mFps < 10) ? 5 : mFps/2, size);
 }
 
 void OpenCVWidget::videoStop() {
@@ -83,37 +113,19 @@ void OpenCVWidget::paintEvent(QPaintEvent *event) {
 
     if(!mImage.isNull()) painter.drawPixmap(0, 0, QPixmap::fromImage(mImage));
 
-    if(!listRect.empty()) {
+    if(!mListRect.empty()) {
         QPen pen(palette().dark().color(), 3, Qt::SolidLine, Qt::FlatCap, Qt::BevelJoin);
         painter.setPen(pen);
-        foreach(QRect rect, listRect) painter.drawRect(rect);
+        foreach(QRect rect, mListRect) painter.drawRect(rect);
         // Clean the list when we have painted the rects
-        listRect.clear();
-    }    
-}
-
-QString OpenCVWidget::cascadeFile() {
-    return mCascadeFile;
-}
-
-void OpenCVWidget::setDetectFaces(bool detect) {
-    mDetectFaces = detect;
-}
-
-void OpenCVWidget::setCascadeFile(QString cascadeFile) {
-    mCascadeFile = cascadeFile;
-    if(mCascade) cvReleaseHaarClassifierCascade(&mCascade);
-    mCascade = (CvHaarClassifierCascade*)cvLoad(mCascadeFile.toLatin1(), 0, 0, 0);
-}
-
-void OpenCVWidget::setFlags(int flags) {
-    mFlags = flags;
+        mListRect.clear();
+    }
 }
 
 /*
 Possible values for mFlags on cvHaarDetectObjects. It can be a combination of zero or more of the following values:
 
-        * CV_HAAR_SCALE_IMAGE- for each scale factor used the function will downscale the image rather than “zoom”
+        * CV_HAAR_SCALE_IMAGE- for each scale factor used the function will downscale the image rather than "zoom"
             the feature coordinates in the classifier cascade. Currently, the option can only be used alone,
             i.e. the flag can not be set together with the others.
         * CV_HAAR_DO_CANNY_PRUNING- If it is set, the function uses Canny edge detector to reject some image regions
@@ -132,16 +144,21 @@ Note, that in single-object mode CV_HAAR_DO_CANNY_PRUNING does not improve perfo
 processing.
 */
 
-void OpenCVWidget::detectFace(IplImage *cvImage) {
+QVector<QRect> OpenCVWidget::detectFaces(IplImage *cvImage) {
+    QVector<QRect> listRect;
     CvRect *rect = NULL;
-    double scale = 2;
+    double scale = 1;
 
+    // Create a gray scale image (1 channel) to turn it into a small image that we send to cvHaarDetectObjects to process
     IplImage *grayImage = cvCreateImage(cvSize(cvImage->width, cvImage->height), cvImage->depth, CV_8UC1);
     IplImage *smallImage = cvCreateImage(cvSize(cvRound(cvImage->width/scale), cvRound(cvImage->height/scale)),
                                          cvImage->depth, CV_8UC1);
+    
+    cvCvtColor(cvImage, grayImage, CV_BGR2GRAY);
 
-    cvCvtColor(cvImage, grayImage, CV_RGB2GRAY);      // Convert to gray scale
-    cvResize(grayImage, smallImage, CV_INTER_LINEAR);    // Resize to a small image
+
+    cvResize(grayImage, smallImage);
+
     cvEqualizeHist(smallImage, smallImage);         // Grays smoothing (normaliza brillo, incrementa contraste)
     cvClearMemStorage(mStorage);
 
@@ -160,6 +177,31 @@ void OpenCVWidget::detectFace(IplImage *cvImage) {
 
     cvReleaseImage(&grayImage);
     cvReleaseImage(&smallImage);
+
+    return listRect;
+}
+
+void OpenCVWidget::setDetectFaces(bool detect) {
+    mDetectingFaces = detect;
+}
+
+void OpenCVWidget::setTrackFace(bool track) {
+    if(!track) mCvRect = cvRect(-1, -1, 0, 0);
+    mTrackingFace = track;
+}
+
+QString OpenCVWidget::cascadeFile() {
+    return mCascadeFile;
+}
+
+void OpenCVWidget::setCascadeFile(QString cascadeFile) {
+    mCascadeFile = cascadeFile;
+    if(mCascade) cvReleaseHaarClassifierCascade(&mCascade);
+    mCascade = (CvHaarClassifierCascade*)cvLoad(mCascadeFile.toUtf8());
+}
+
+void OpenCVWidget::setFlags(int flags) {
+    mFlags = flags;
 }
 
 QImage OpenCVWidget::image() const {
