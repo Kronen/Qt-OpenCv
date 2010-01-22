@@ -4,12 +4,9 @@
 #include <QMessageBox>
 #include <QtDebug>
 
-
 CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
     mCamShiftDialog = 0;
-
     cvWidget = new OpenCVWidget(this);
-    cvWidget->setAttribute(Qt::WA_DeleteOnClose, true);
 
     setWindowIcon(QIcon(":/images/OpenCV.ico"));
 
@@ -21,19 +18,26 @@ CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
     if(!cvWidget->isCaptureActive()) {
         QMessageBox::warning(this, tr("OpenCV + Qt"),
                                         tr("Can't detect a camera connected to the PC.\n"
-                                           "The program doesn't provide any option\n"
-                                           "to configure the device\n"),
+                                           "This program doesn't provide any option\n"
+                                           "to configure the device."),
                                         QMessageBox::Close);
 
         videoAction->setEnabled(false);
         screenshotAction->setEnabled(false);
         optionsMenu->setEnabled(false);
+        flagsMenu->setEnabled(false);
     } else if(!cvWidget->cascadeFile().isEmpty()) {
         detectFacesAction->setEnabled(true);
         trackFaceAction->setEnabled(true);
     }
 
     setCentralWidget(cvWidget);
+}
+
+void CameraWindow::closeEvent(QCloseEvent *event) {
+    delete cvWidget;
+    if(mCamShiftDialog) delete mCamShiftDialog;
+    event->accept();
 }
 
 void CameraWindow::takeScreenshot() {
@@ -76,15 +80,16 @@ void CameraWindow::detectFaces() {
 
 void CameraWindow::trackFace() {
     // We don't track and detect at the same time
-    if(trackFaceAction->isChecked()) {
-        camshiftDialogAction->setEnabled(true);
+    if(trackFaceAction->isChecked()) {        
         detectFacesAction->setChecked(false);
         cvWidget->setDetectFaces(false);
         cvWidget->setTrackFace(true);
-        showCamShiftDialog();
+        camshiftDialogAction->setEnabled(true);
+        flagsMenu->setEnabled(false);
     } else {
         cvWidget->setTrackFace(false);
         camshiftDialogAction->setEnabled(false);
+        flagsMenu->setEnabled(true);
     }
 }
 
@@ -97,8 +102,9 @@ void CameraWindow::showCamShiftDialog() {
 
         connect(mCamShiftDialog->vMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftVMin(int)));
         connect(mCamShiftDialog->sMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftSMin(int)));
-        mCamShiftDialog->show();
-    }    
+    }
+
+    mCamShiftDialog->show();
 }
 
 void CameraWindow::setCascadeFile() {
@@ -214,7 +220,7 @@ void CameraWindow::createActions() {
     detectFacesAction->setEnabled(false);
     connect(detectFacesAction, SIGNAL(triggered()), this, SLOT(detectFaces()));
 
-    trackFaceAction = new QAction(tr("&Track a Face"), this);
+    trackFaceAction = new QAction(tr("CamShift. &Track a Face"), this);
     trackFaceAction->setIcon(QIcon(":/images/icon_detectfaces.png"));
     trackFaceAction->setShortcut(tr("F7"));
     trackFaceAction->setStatusTip(tr("Track a face between frames"));
@@ -252,9 +258,3 @@ void CameraWindow::createActions() {
     unsetFlagsAction = new QAction(tr("&Unset All Flags"), this);
     connect(unsetFlagsAction, SIGNAL(triggered()), this, SLOT(unsetFlags()));
 }
-
-void CameraWindow::closeEvent(QCloseEvent *event) {
-    delete cvWidget;
-    if(mCamShiftDialog) delete mCamShiftDialog;
-    event->accept();
- }

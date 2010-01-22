@@ -7,7 +7,7 @@ CamShift::CamShift(CvSize size) {
     mHistBins = 30;
     mRangesArray[0] = 0;
     mRangesArray[1] = 180;
-    mVMin = 65;
+    mVMin = 225;
     mVMax = 256;
     mSMin = 55;
     mFrames = 0;
@@ -90,11 +90,11 @@ void CamShift::updateHueImage(const IplImage *cvImage) {
 }
 
 void CamShift::setVMin(int vMin) {
-    mVMin = vMin;
+    if(mVMin != vMin) mVMin = vMin;
 }
 
 void CamShift::setSMin(int sMin) {
-    mSMin = sMin;
+    if(mSMin != sMin) mSMin = sMin;
 }
 
 int CamShift::vMin() {

@@ -60,22 +60,6 @@ OpenCVWidget::~OpenCVWidget() {
     cvReleaseCapture(&mCamera);
 }
 
-void OpenCVWidget::setCamShiftVMin(int vMin) {
-    mCamShift->setVMin(vMin);
-}
-
-void OpenCVWidget::setCamShiftSMin(int sMin) {
-    mCamShift->setSMin(sMin);
-}
-
-int OpenCVWidget::getCamShiftVMin() {
-    return mCamShift->vMin();
-}
-
-int OpenCVWidget::getCamShiftSMin() {
-   return mCamShift->sMin();
-}
-
 bool OpenCVWidget::isCaptureActive() {
     if(!mCamera) return false;
     return true;
@@ -95,9 +79,10 @@ void OpenCVWidget::queryFrame() {
     if(mDetectingFaces) mListRect = detectFaces(mCvImage);
 
     if(mTrackingFace) {
-        // Check if there is a valid rect, if there is a valid one we begin to track the face,
-        // if not we detect one first
+        // Check if we have a valid rect, if we have a valid one we track the face,
+        // if not we get a face rect first
         if(!(mCvRect.width > 0 && mCvRect.height > 0)) {
+            // Detect the Face
             setFlags(CV_HAAR_FIND_BIGGEST_OBJECT);
             QVector<QRect> listRect = detectFaces(mCvImage);
 
@@ -107,10 +92,9 @@ void OpenCVWidget::queryFrame() {
                 mCamShift->startTracking(mCvImage, mCvRect);
             }
         } else {
+            // Track the Face
             mCvBox = mCamShift->trackFace(mCvImage);
-            qDebug() << mCvBox.center.x << mCvBox.center.y << mCvBox.size.width << mCvBox.size.height;
-            mListRect.append(QRect(mCvBox.center.x-(mCvBox.size.width/2), mCvBox.center.y-(mCvBox.size.height/2),
-                             mCvBox.size.width, mCvBox.size.height));
+            cvEllipseBox(mCvImage, mCvBox, CV_RGB(255,0,0), 3, CV_AA, 0);
         }
     }
 
@@ -119,24 +103,16 @@ void OpenCVWidget::queryFrame() {
     this->update();
 }
 
-void OpenCVWidget::videoWrite(QString filename) {
-    CvSize size = cvGetSize(mCvImage);
-    mVideoWriter = cvCreateVideoWriter(filename.toUtf8(), CV_FOURCC('D','I','V','X'), (mFps < 10) ? 5 : mFps/2, size);
-}
-
-void OpenCVWidget::videoStop() {
-    cvReleaseVideoWriter(&mVideoWriter);
-}
-
 void OpenCVWidget::paintEvent(QPaintEvent *event) {
     QPainter painter(this);
 
     if(!mImage.isNull()) painter.drawPixmap(0, 0, QPixmap::fromImage(mImage));
 
     if(!mListRect.empty()) {
-        QPen pen(palette().dark().color(), 3, Qt::SolidLine, Qt::FlatCap, Qt::BevelJoin);
+        QPen pen(palette().dark().color(), 4, Qt::SolidLine, Qt::FlatCap, Qt::BevelJoin);
         painter.setPen(pen);
-        foreach(QRect rect, mListRect) painter.drawRect(rect);
+        foreach(QRect rect, mListRect) painter.drawEllipse(rect);
+
         // Clean the list when we have painted the rects
         mListRect.clear();
     }
@@ -167,18 +143,15 @@ processing.
 QVector<QRect> OpenCVWidget::detectFaces(IplImage *cvImage) {
     QVector<QRect> listRect;
     CvRect *rect = NULL;
-    double scale = 1;
+    double scale = 1.3;
 
     // Create a gray scale image (1 channel) to turn it into a small image that we send to cvHaarDetectObjects to process
     IplImage *grayImage = cvCreateImage(cvSize(cvImage->width, cvImage->height), cvImage->depth, CV_8UC1);
     IplImage *smallImage = cvCreateImage(cvSize(cvRound(cvImage->width/scale), cvRound(cvImage->height/scale)),
                                          cvImage->depth, CV_8UC1);
-    
+
     cvCvtColor(cvImage, grayImage, CV_BGR2GRAY);
-
-
     cvResize(grayImage, smallImage);
-
     cvEqualizeHist(smallImage, smallImage);         // Grays smoothing (normaliza brillo, incrementa contraste)
     cvClearMemStorage(mStorage);
 
@@ -199,6 +172,15 @@ QVector<QRect> OpenCVWidget::detectFaces(IplImage *cvImage) {
     cvReleaseImage(&smallImage);
 
     return listRect;
+}
+
+void OpenCVWidget::videoWrite(QString filename) {
+    CvSize size = cvGetSize(mCvImage);
+    mVideoWriter = cvCreateVideoWriter(filename.toUtf8(), CV_FOURCC('D','I','V','X'), (mFps < 10) ? 5 : mFps/2, size);
+}
+
+void OpenCVWidget::videoStop() {
+    cvReleaseVideoWriter(&mVideoWriter);
 }
 
 void OpenCVWidget::setDetectFaces(bool detect) {
@@ -222,6 +204,22 @@ void OpenCVWidget::setCascadeFile(QString cascadeFile) {
 
 void OpenCVWidget::setFlags(int flags) {
     mFlags = flags;
+}
+
+void OpenCVWidget::setCamShiftVMin(int vMin) {
+    mCamShift->setVMin(vMin);
+}
+
+void OpenCVWidget::setCamShiftSMin(int sMin) {
+    mCamShift->setSMin(sMin);
+}
+
+int OpenCVWidget::getCamShiftVMin() {
+    return mCamShift->vMin();
+}
+
+int OpenCVWidget::getCamShiftSMin() {
+   return mCamShift->sMin();
 }
 
 QImage OpenCVWidget::image() const {
