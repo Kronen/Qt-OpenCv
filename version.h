@@ -4,8 +4,8 @@
 #include <QString>
 
 const int MAJOR_VERSION = 0;
-const int MINOR_VERSION = 4;
-const int REVISION_VERSION = 7;
+const int MINOR_VERSION = 5;
+const int REVISION_VERSION = 0;
 
 QString version = QString("%1.%2.%3").arg(MAJOR_VERSION).arg(MINOR_VERSION).arg(REVISION_VERSION);
 

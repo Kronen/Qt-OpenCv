@@ -52,7 +52,11 @@ class CameraWindow : public QMainWindow {
         QAction *detectFacesAction;
         QAction *trackFaceAction;
 
+        // Settings Menu
         QAction *cascadeFileAction;
+        QAction *camshiftDialogAction;
+
+        // Flags Menu
         QAction *findBiggestObjectAction;
         QAction *doRoughSearchAction;
         QAction *doCannyPruningAction;

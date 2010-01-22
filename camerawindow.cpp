@@ -6,6 +6,8 @@
 
 
 CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
+    mCamShiftDialog = 0;
+
     cvWidget = new OpenCVWidget(this);
     cvWidget->setAttribute(Qt::WA_DeleteOnClose, true);
 
@@ -65,6 +67,7 @@ void CameraWindow::writeVideo() {
 void CameraWindow::detectFaces() {
     // We don't track and detect at the same time
     if(detectFacesAction->isChecked()) {
+        camshiftDialogAction->setEnabled(false);
         trackFaceAction->setChecked(false);
         cvWidget->setTrackFace(false);
         cvWidget->setDetectFaces(true);
@@ -74,12 +77,28 @@ void CameraWindow::detectFaces() {
 void CameraWindow::trackFace() {
     // We don't track and detect at the same time
     if(trackFaceAction->isChecked()) {
+        camshiftDialogAction->setEnabled(true);
         detectFacesAction->setChecked(false);
         cvWidget->setDetectFaces(false);
         cvWidget->setTrackFace(true);
-
         showCamShiftDialog();
-    } else cvWidget->setTrackFace(false);
+    } else {
+        cvWidget->setTrackFace(false);
+        camshiftDialogAction->setEnabled(false);
+    }
+}
+
+void CameraWindow::showCamShiftDialog() {
+    if(!mCamShiftDialog) {
+        mCamShiftDialog = new CamShiftDialog(this);
+
+        mCamShiftDialog->vMinSlider->setValue(cvWidget->getCamShiftVMin());
+        mCamShiftDialog->sMinSlider->setValue(cvWidget->getCamShiftSMin());
+
+        connect(mCamShiftDialog->vMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftVMin(int)));
+        connect(mCamShiftDialog->sMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftSMin(int)));
+        mCamShiftDialog->show();
+    }    
 }
 
 void CameraWindow::setCascadeFile() {
@@ -127,24 +146,11 @@ void CameraWindow::unsetFlags() {
     setFlags();
 }
 
-void CameraWindow::showCamShiftDialog() {
-    if(!mCamShiftDialog) {
-        mCamShiftDialog = new CamShiftDialog(this);
-
-        mCamShiftDialog->vMinSlider->setValue(cvWidget->getCamShiftVMin());
-        mCamShiftDialog->sMinSlider->setValue(cvWidget->getCamShiftSMin());
-
-        connect(mCamShiftDialog->vMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftSMin(int)));
-        connect(mCamShiftDialog->sMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftSMin(int)));
-    }
-
-    mCamShiftDialog->show();
-}
-
 void CameraWindow::createMenu() {
     optionsMenu = menuBar()->addMenu(tr("&Settings"));
     optionsMenu->addAction(cascadeFileAction);
     optionsMenu->addSeparator();
+    optionsMenu->addAction(camshiftDialogAction);
 
     flagsMenu = menuBar()->addMenu(tr("&Flags"));
     flagsMenu->addAction(findBiggestObjectAction);
@@ -220,12 +226,17 @@ void CameraWindow::createActions() {
     cascadeFileAction->setStatusTip(tr("Set a cascade file for detecting faces"));    
     connect(cascadeFileAction, SIGNAL(triggered()), this, SLOT(setCascadeFile()));
 
+    camshiftDialogAction = new QAction(tr("CamShift"), this);
+    camshiftDialogAction->setStatusTip(tr("Change the vMin and sMin variables for CamShift"));
+    camshiftDialogAction->setEnabled(false);
+    connect(camshiftDialogAction, SIGNAL(triggered()), this, SLOT(showCamShiftDialog()));
+
     // SubMenu Flags
     findBiggestObjectAction = new QAction(tr("Only find the &Biggest Object"), this);
     findBiggestObjectAction->setCheckable(true);
     connect(findBiggestObjectAction, SIGNAL(triggered()), this, SLOT(setFlags()));
 
-    doRoughSearchAction = new QAction(tr("  Activate &Rough Search"), this);
+    doRoughSearchAction = new QAction(tr("      Activate &Rough Search"), this);
     doRoughSearchAction->setCheckable(true);
     doRoughSearchAction->setEnabled(false);
     connect(doRoughSearchAction, SIGNAL(triggered()), this, SLOT(setFlags()));
@@ -244,5 +255,6 @@ void CameraWindow::createActions() {
 
 void CameraWindow::closeEvent(QCloseEvent *event) {
     delete cvWidget;
+    if(mCamShiftDialog) delete mCamShiftDialog;
     event->accept();
  }
