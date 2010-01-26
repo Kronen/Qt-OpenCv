@@ -113,8 +113,11 @@ void CameraWindow::setCascadeFile() {
                                                     "./haarcascades",
                                                     tr("Cascade Files (*.xml)"));
 
-    if(!cascadeFile.isNull()) cvWidget->setCascadeFile(cascadeFile);
-    detectFacesAction->setEnabled(true);
+    if(!cascadeFile.isNull()) {
+        cvWidget->setCascadeFile(cascadeFile);
+        detectFacesAction->setEnabled(true);
+        trackFaceAction->setEnabled(true);
+    }
 }
 
 void CameraWindow::setFlags() {

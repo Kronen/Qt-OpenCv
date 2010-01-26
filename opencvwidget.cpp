@@ -4,6 +4,7 @@
 #include <QFileInfo>
 
 OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
+    mCamera = 0;
     mCamera = cvCaptureFromCAM(CV_CAP_ANY);
 
     if(mCamera) {
@@ -33,7 +34,7 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
         } else {
             w = frame->width;
             h = frame->height;
-        }
+        }        
 
         // QImage to draw on paint event
         mImage = QImage(QSize(w, h), QImage::Format_RGB888);
@@ -61,8 +62,7 @@ OpenCVWidget::~OpenCVWidget() {
 }
 
 bool OpenCVWidget::isCaptureActive() {
-    if(!mCamera) return false;
-    return true;
+    return bool(mCamera);
 }
 
 void OpenCVWidget::queryFrame() {

@@ -38,7 +38,7 @@ public:
     int getCamShiftVMin();
 
     QImage image() const;
-    QSize sizeHint() const;    
+    QSize sizeHint() const;
 
 protected:
     void paintEvent(QPaintEvent *event);
