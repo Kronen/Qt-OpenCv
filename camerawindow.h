@@ -25,7 +25,7 @@ class CameraWindow : public QMainWindow {
         void createStatusBar();
 
     private slots:
-        void takeScreenshot();
+        void saveScreenshot();
         void writeVideo();
         void detectFaces();
         void trackFace();
@@ -41,7 +41,9 @@ class CameraWindow : public QMainWindow {
         OpenCVWidget *cvWidget;
         CamShiftDialog *mCamShiftDialog;
 
-        QMenu *optionsMenu;
+        QMenu *fileMenu;
+        QMenu *settingsMenu;
+        QMenu *faceDetectMenu;
         QMenu *flagsMenu;
         QToolBar *toolBar;
         QLabel *statusLabel;

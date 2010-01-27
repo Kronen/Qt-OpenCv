@@ -10,6 +10,7 @@
 #include <cv.h>
 #include <highgui.h>
 
+#include "facedetect.h"
 #include "camshift.h"
 
 class OpenCVWidget : public QWidget {
@@ -22,23 +23,21 @@ public:
     OpenCVWidget(QWidget *parent = 0);
     ~OpenCVWidget();
 
-    bool isCaptureActive();
+    bool isCaptureActive() const;
+    bool isFaceDetectAvalaible() const;
 
-    void videoWrite(QString filename);
+    void saveScreenshot();
+    void videoWrite();
     void videoStop();
 
     void setDetectFaces(bool);
     void setTrackFace(bool);
 
-    void setCascadeFile(QString cascadeFile);
-    void setFlags(int flags);
-    QString cascadeFile();
+    int getCamShiftSMin() const;
+    int getCamShiftVMin() const;
 
-    int getCamShiftSMin();
-    int getCamShiftVMin();
-
-    QImage image() const;
-    QSize sizeHint() const;    
+    void setFaceDetectFlags(int flags);
+    void setFaceDetectCascadeFile(QString filename);
 
 protected:
     void paintEvent(QPaintEvent *event);
@@ -58,20 +57,16 @@ private:
     QImage mImage;
 
     CvVideoWriter *mVideoWriter;
-    CvHaarClassifierCascade *mCascade;
-    CvMemStorage *mStorage;
-    CamShift *mCamShift;
+    FaceDetect *mFaceDetect;
+    CamShift *mCamShift;   
 
-    QString mCascadeFile;
     QVector<QRect> mListRect;
-    QRect mTrackFaceRect;
     CvBox2D mCvBox;
     CvRect mCvRect;
 
     bool mDetectingFaces;
     bool mTrackingFace;
-    double mFps;
-    int mFlags;    
+    double mFps;        
 
     QTimer *mTimer;
 };

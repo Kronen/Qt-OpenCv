@@ -24,11 +24,8 @@ CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
 
         videoAction->setEnabled(false);
         screenshotAction->setEnabled(false);
-        optionsMenu->setEnabled(false);
+        settingsMenu->setEnabled(false);
         flagsMenu->setEnabled(false);
-    } else if(!cvWidget->cascadeFile().isEmpty()) {
-        detectFacesAction->setEnabled(true);
-        trackFaceAction->setEnabled(true);
     }
 
     setCentralWidget(cvWidget);
@@ -40,28 +37,14 @@ void CameraWindow::closeEvent(QCloseEvent *event) {
     event->accept();
 }
 
-void CameraWindow::takeScreenshot() {
-    QImage image;
-    quint8 i = 1;
-
-    QString filename = QString("webcamPic%1.jpg").arg(i);
-    while(QFileInfo(filename).exists())
-        filename = QString("webcamPic%1.jpg").arg(i++);
-
-    image = cvWidget->image();
-    if(!image.isNull()) image.save(filename, "JPG", 80);
+void CameraWindow::saveScreenshot() {
+    cvWidget->saveScreenshot();
 }
 
 void CameraWindow::writeVideo() {
     if(videoAction->isChecked()) {
         videoAction->setIcon(QIcon(":/images/icon_stopvideo.png"));
-
-        quint8 i = 1;
-        QString filename = QString("webcamVid%1.avi").arg(i);
-        while(QFileInfo(filename).exists())
-            filename = QString("webcamVid%1.avi").arg(i++);
-
-        cvWidget->videoWrite(filename);
+        cvWidget->videoWrite();
     } else {
         videoAction->setIcon(QIcon(":/images/icon_video.png"));
         cvWidget->videoStop();
@@ -71,6 +54,8 @@ void CameraWindow::writeVideo() {
 void CameraWindow::detectFaces() {
     // We don't track and detect at the same time
     if(detectFacesAction->isChecked()) {
+        if(!cvWidget->isFaceDetectAvalaible()) setCascadeFile();
+        flagsMenu->setEnabled(true);
         camshiftDialogAction->setEnabled(false);
         trackFaceAction->setChecked(false);
         cvWidget->setTrackFace(false);
@@ -80,7 +65,8 @@ void CameraWindow::detectFaces() {
 
 void CameraWindow::trackFace() {
     // We don't track and detect at the same time
-    if(trackFaceAction->isChecked()) {        
+    if(trackFaceAction->isChecked()) {
+        if(!cvWidget->isFaceDetectAvalaible()) setCascadeFile();
         detectFacesAction->setChecked(false);
         cvWidget->setDetectFaces(false);
         cvWidget->setTrackFace(true);
@@ -113,8 +99,11 @@ void CameraWindow::setCascadeFile() {
                                                     "./haarcascades",
                                                     tr("Cascade Files (*.xml)"));
 
-    if(!cascadeFile.isNull()) cvWidget->setCascadeFile(cascadeFile);
-    detectFacesAction->setEnabled(true);
+    if(!cascadeFile.isNull()) cvWidget->setFaceDetectCascadeFile(cascadeFile);
+        else {
+            detectFacesAction->setChecked(false);
+            trackFaceAction->setChecked(false);
+        }
 }
 
 void CameraWindow::setFlags() {
@@ -141,7 +130,7 @@ void CameraWindow::setFlags() {
         }
     }
 
-    cvWidget->setFlags(flags);
+    cvWidget->setFaceDetectFlags(flags);
 }
 
 void CameraWindow::unsetFlags() {
@@ -153,12 +142,14 @@ void CameraWindow::unsetFlags() {
 }
 
 void CameraWindow::createMenu() {
-    optionsMenu = menuBar()->addMenu(tr("&Settings"));
-    optionsMenu->addAction(cascadeFileAction);
-    optionsMenu->addSeparator();
-    optionsMenu->addAction(camshiftDialogAction);
+    fileMenu = menuBar()->addMenu(tr("&File"));
+    fileMenu->addAction(quitAction);
 
-    flagsMenu = menuBar()->addMenu(tr("&Flags"));
+    settingsMenu = menuBar()->addMenu(tr("&Settings"));
+
+    faceDetectMenu = settingsMenu->addMenu(tr("&DetectFace"));
+    faceDetectMenu->addAction(cascadeFileAction);
+    flagsMenu = faceDetectMenu->addMenu(tr("&Flags"));
     flagsMenu->addAction(findBiggestObjectAction);
     flagsMenu->addAction(doRoughSearchAction);
     flagsMenu->addSeparator();
@@ -167,6 +158,11 @@ void CameraWindow::createMenu() {
     flagsMenu->addAction(scaleImageAction);
     flagsMenu->addSeparator();
     flagsMenu->addAction(unsetFlagsAction);
+
+    settingsMenu->addSeparator();
+    settingsMenu->addAction(camshiftDialogAction);
+
+
 }
 
 void CameraWindow::createToolBar() {
@@ -199,40 +195,38 @@ void CameraWindow::createActions() {
     quitAction->setStatusTip(tr("Exit the application"));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 
-    screenshotAction = new QAction(tr("Take &Screenshot"), this);
+    screenshotAction = new QAction(tr("Take Screenshot"), this);
     screenshotAction->setIcon(QIcon(":/images/icon_screenshot.png"));
-    screenshotAction->setShortcut(tr("F4"));
+    screenshotAction->setShortcut(tr("Ctrl+S"));
     screenshotAction->setStatusTip(tr("Take a screenshot from the camera"));
-    connect(screenshotAction, SIGNAL(triggered()), this, SLOT(takeScreenshot()));
+    connect(screenshotAction, SIGNAL(triggered()), this, SLOT(saveScreenshot()));
 
-    videoAction = new QAction(tr("Grab a &Video"), this);
+    videoAction = new QAction(tr("Grab a Video"), this);
     videoAction->setIcon(QIcon(":/images/icon_video.png"));
-    videoAction->setShortcut(tr("F5"));
+    videoAction->setShortcut(tr("Ctrl+G"));
     videoAction->setStatusTip(tr("Record a video from the camera"));
     videoAction->setCheckable(true);
     connect(videoAction, SIGNAL(triggered()), this, SLOT(writeVideo()));
 
-    detectFacesAction = new QAction(tr("&Detect Faces"), this);
+    detectFacesAction = new QAction(tr("Detect Faces"), this);
     detectFacesAction->setIcon(QIcon(":/images/icon_detectfaces.png"));
-    detectFacesAction->setShortcut(tr("F6"));
+    detectFacesAction->setShortcut(tr("Ctrl+D"));
     detectFacesAction->setStatusTip(tr("Detect the faces for each frame of the camera"));
     detectFacesAction->setCheckable(true);
-    detectFacesAction->setEnabled(false);
     connect(detectFacesAction, SIGNAL(triggered()), this, SLOT(detectFaces()));
 
-    trackFaceAction = new QAction(tr("CamShift. &Track a Face"), this);
-    trackFaceAction->setIcon(QIcon(":/images/icon_detectfaces.png"));
-    trackFaceAction->setShortcut(tr("F7"));
+    trackFaceAction = new QAction(tr("CamShift. Track a Face"), this);
+    trackFaceAction->setIcon(QIcon(":/images/icon_trackface.png"));
+    trackFaceAction->setShortcut(tr("Ctrl+T"));
     trackFaceAction->setStatusTip(tr("Track a face between frames"));
     trackFaceAction->setCheckable(true);
-    trackFaceAction->setEnabled(false);
     connect(trackFaceAction, SIGNAL(triggered()), this, SLOT(trackFace()));
 
     cascadeFileAction = new QAction(tr("Set a &Cascade File"), this);
     cascadeFileAction->setStatusTip(tr("Set a cascade file for detecting faces"));    
     connect(cascadeFileAction, SIGNAL(triggered()), this, SLOT(setCascadeFile()));
 
-    camshiftDialogAction = new QAction(tr("CamShift"), this);
+    camshiftDialogAction = new QAction(tr("CamShift Calibration"), this);
     camshiftDialogAction->setStatusTip(tr("Change the vMin and sMin variables for CamShift"));
     camshiftDialogAction->setEnabled(false);
     connect(camshiftDialogAction, SIGNAL(triggered()), this, SLOT(showCamShiftDialog()));

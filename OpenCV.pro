@@ -15,11 +15,13 @@ SOURCES += main.cpp \
     camerawindow.cpp \
     opencvwidget.cpp \
     camshift.cpp \
-    camshiftdialog.cpp
+    camshiftdialog.cpp \
+    facedetect.cpp
 HEADERS += camerawindow.h \
     opencvwidget.h \
     camshift.h \
     version.h \
-    camshiftdialog.h
+    camshiftdialog.h \
+    facedetect.h
 RESOURCES += resources.qrc
 FORMS += camshiftdialog.ui

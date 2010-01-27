@@ -6,5 +6,6 @@
         <file>images/icon_stopvideo.png</file>
         <file>images/icon_video.png</file>
         <file>images/OpenCV.ico</file>
+        <file>images/icon_trackface.png</file>
     </qresource>
 </RCC>
