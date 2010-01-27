@@ -97,7 +97,6 @@ void OpenCVWidget::queryFrame() {
         } else {
             // Track the Face
             mCvBox = mCamShift->trackFace(mCvImage);
-            //if(mCvBox.center.x - mCvBox.size.width/2 > 0 && mCvBox.center.y - mCvBox.size.height/2 > 0)
             cvEllipseBox(mCvImage, mCvBox, CV_RGB(255,0,0), 3, CV_AA, 0);
         }
     }
