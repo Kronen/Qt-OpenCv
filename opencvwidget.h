@@ -22,7 +22,7 @@ public:
     OpenCVWidget(QWidget *parent = 0);
     ~OpenCVWidget();
 
-    bool isCaptureActive();
+    bool isCaptureActive() const;
 
     void videoWrite(QString filename);
     void videoStop();
@@ -32,10 +32,10 @@ public:
 
     void setCascadeFile(QString cascadeFile);
     void setFlags(int flags);
-    QString cascadeFile();
+    QString cascadeFile() const;
 
-    int getCamShiftSMin();
-    int getCamShiftVMin();
+    int getCamShiftSMin() const;
+    int getCamShiftVMin() const;
 
     QImage image() const;
     QSize sizeHint() const;

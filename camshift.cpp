@@ -9,7 +9,7 @@ CamShift::CamShift(CvSize size) {
     mRangesArray[1] = 180;
     mVMin = 225;
     mVMax = 256;
-    mSMin = 55;
+    mSMin = 160;
     mFrames = 0;
     mHSVImg  = cvCreateImage(size, 8, 3);
     mHueImg  = cvCreateImage(size, 8, 1);
@@ -97,10 +97,10 @@ void CamShift::setSMin(int sMin) {
     if(mSMin != sMin) mSMin = sMin;
 }
 
-int CamShift::vMin() {
+int CamShift::vMin() const {
     return mVMin;
 }
 
-int CamShift::sMin() {
+int CamShift::sMin() const {
     return mSMin;
 }

@@ -17,8 +17,8 @@ class CamShift {
         // Parameter settings
         void setVMin(int vmin);
         void setSMin(int smin);
-        int vMin();
-        int sMin();
+        int vMin() const;
+        int sMin() const;
 
     private:
         void updateHueImage(const IplImage *cvImage);

@@ -61,7 +61,7 @@ OpenCVWidget::~OpenCVWidget() {
     cvReleaseCapture(&mCamera);
 }
 
-bool OpenCVWidget::isCaptureActive() {
+bool OpenCVWidget::isCaptureActive() const {
     return bool(mCamera);
 }
 
@@ -192,7 +192,7 @@ void OpenCVWidget::setTrackFace(bool track) {
     if(!mTrackingFace) mCvRect = cvRect(-1, -1, 0, 0);
 }
 
-QString OpenCVWidget::cascadeFile() {
+QString OpenCVWidget::cascadeFile() const {
     return mCascadeFile;
 }
 
@@ -214,11 +214,11 @@ void OpenCVWidget::setCamShiftSMin(int sMin) {
     mCamShift->setSMin(sMin);
 }
 
-int OpenCVWidget::getCamShiftVMin() {
+int OpenCVWidget::getCamShiftVMin() const {
     return mCamShift->vMin();
 }
 
-int OpenCVWidget::getCamShiftSMin() {
+int OpenCVWidget::getCamShiftSMin() const {
    return mCamShift->sMin();
 }
 
