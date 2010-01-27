@@ -36,15 +36,13 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
         // Share the buffer between QImage and IplImage *
         mCvImage->imageData = (char *)mImage.bits();
 
-        // Init FaceDetect
+        // Init FaceDetect abd CamShift
         mFaceDetect = new FaceDetect();
+        mCamShift = new CamShift(cvSize(w, h));
 
         // Try to load a default cascade file
         QFileInfo cascadeFile("haarcascades/haarcascade_frontalface_alt2.xml");
         if(cascadeFile.exists()) mFaceDetect->setCascadeFile(cascadeFile.absoluteFilePath());
-
-        // Init FaceTrack
-        mCamShift = new CamShift(cvSize(w, h));
 
         // We call queryFrame 'mFps' times per second
         mTimer = new QTimer(this);
