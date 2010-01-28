@@ -4,6 +4,7 @@
 #include <QFileInfo>
 
 OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
+    mCamera = 0;
     mCamera = cvCaptureFromCAM(CV_CAP_ANY);
 
     if(mCamera) {
@@ -58,8 +59,7 @@ OpenCVWidget::~OpenCVWidget() {
 }
 
 bool OpenCVWidget::isCaptureActive() const {
-    if(!mCamera) return false;
-    return true;
+    return bool(mCamera);
 }
 
 bool OpenCVWidget::isFaceDetectAvalaible() const {

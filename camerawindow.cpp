@@ -94,16 +94,14 @@ void CameraWindow::showCamShiftDialog() {
 }
 
 void CameraWindow::setCascadeFile() {
-    QString cascadeFile = QFileDialog::getOpenFileName(this,
-                                                    tr("Choose Cascade File"),
-                                                    "./haarcascades",
-                                                    tr("Cascade Files (*.xml)"));
-
-    if(!cascadeFile.isNull()) cvWidget->setFaceDetectCascadeFile(cascadeFile);
-        else {
-            detectFacesAction->setChecked(false);
-            trackFaceAction->setChecked(false);
-        }
+    QString cascadeFile = QFileDialog::getOpenFileName(this, tr("Choose Cascade File"), "./haarcascades",
+                                                       tr("Cascade Files (*.xml)"));
+    if(!cascadeFile.isNull()) {
+        cvWidget->setFaceDetectCascadeFile(cascadeFile);
+    } else {
+        detectFacesAction->setChecked(false);
+        trackFaceAction->setChecked(false);
+    }
 }
 
 void CameraWindow::setFlags() {
