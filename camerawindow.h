@@ -32,7 +32,7 @@ class CameraWindow : public QMainWindow {
         void setCascadeFile();
         void setFlags();
         void unsetFlags();
-        void showCamShiftDialog();
+        void dialogCamShift();
 
     protected:
         virtual void closeEvent(QCloseEvent *event);

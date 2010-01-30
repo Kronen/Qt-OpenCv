@@ -33,11 +33,11 @@ public:
     void setDetectFaces(bool);
     void setTrackFace(bool);
 
-    int getCamShiftSMin() const;
-    int getCamShiftVMin() const;
-
     void setFaceDetectFlags(int flags);
     void setFaceDetectCascadeFile(QString filename);
+
+    int camshiftSMin() const;
+    int camshiftVMin() const;    
 
 protected:
     void paintEvent(QPaintEvent *event);
@@ -58,7 +58,7 @@ private:
 
     CvVideoWriter *mVideoWriter;
     FaceDetect *mFaceDetect;
-    CamShift *mCamShift;   
+    CamShift *mCamShift;
 
     QVector<QRect> mListRect;
     CvBox2D mCvBox;

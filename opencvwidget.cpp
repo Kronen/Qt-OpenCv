@@ -14,9 +14,6 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
         mVideoWriter = 0;
         mCvRect = cvRect(-1, -1, 0, 0);
 
-        mFps = cvGetCaptureProperty(mCamera, CV_CAP_PROP_FPS);
-        mFps = (mFps > 0) ? mFps : 17;
-
         // Get a query frame to initialize the capture and to get the frame's dimensions
         IplImage* frame = cvQueryFrame(mCamera);
         if(!frame) {
@@ -26,6 +23,10 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
             w = frame->width;
             h = frame->height;
         }
+
+        mFps = cvGetCaptureProperty(mCamera, CV_CAP_PROP_FPS);
+        mFps = (mFps > 0) ? mFps : 17;
+
         setMinimumSize(w,h);
 
         // QImage to draw on paint event
@@ -54,7 +55,7 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
 
 OpenCVWidget::~OpenCVWidget() {
     delete mFaceDetect;
-    delete mCamShift;    
+    delete mCamShift;
     cvReleaseCapture(&mCamera);
 }
 
@@ -167,10 +168,10 @@ void OpenCVWidget::setCamShiftSMin(int sMin) {
     mCamShift->setSMin(sMin);
 }
 
-int OpenCVWidget::getCamShiftVMin() const {
+int OpenCVWidget::camshiftVMin() const {
     return mCamShift->vMin();
 }
 
-int OpenCVWidget::getCamShiftSMin() const{
+int OpenCVWidget::camshiftSMin() const{
    return mCamShift->sMin();
 }

@@ -79,15 +79,15 @@ void CameraWindow::trackFace() {
     }
 }
 
-void CameraWindow::showCamShiftDialog() {
+void CameraWindow::dialogCamShift() {
     if(!mCamShiftDialog) {
         mCamShiftDialog = new CamShiftDialog(this);
 
-        mCamShiftDialog->vMinSlider->setValue(cvWidget->getCamShiftVMin());
-        mCamShiftDialog->sMinSlider->setValue(cvWidget->getCamShiftSMin());
+        mCamShiftDialog->vMinSlider->setValue(cvWidget->camshiftVMin());
+        mCamShiftDialog->sMinSlider->setValue(cvWidget->camshiftSMin());
 
-        connect(mCamShiftDialog->vMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftVMin(int)));
-        connect(mCamShiftDialog->sMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftSMin(int)));
+        connect(mCamShiftDialog->vMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamshiftVMin(int)));
+        connect(mCamShiftDialog->sMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamshiftSMin(int)));
     }
 
     mCamShiftDialog->show();
@@ -227,7 +227,7 @@ void CameraWindow::createActions() {
     camshiftDialogAction = new QAction(tr("CamShift Calibration"), this);
     camshiftDialogAction->setStatusTip(tr("Change the vMin and sMin variables for CamShift"));
     camshiftDialogAction->setEnabled(false);
-    connect(camshiftDialogAction, SIGNAL(triggered()), this, SLOT(showCamShiftDialog()));
+    connect(camshiftDialogAction, SIGNAL(triggered()), this, SLOT(dialogCamShift()));
 
     // SubMenu Flags
     findBiggestObjectAction = new QAction(tr("Only find the &Biggest Object"), this);
