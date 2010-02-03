@@ -166,6 +166,7 @@ void CameraWindow::createMenu() {
 void CameraWindow::createToolBar() {
     toolBar = addToolBar(tr("&File"));
     toolBar->setIconSize(QSize(32,32));
+    toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     toolBar->addAction(quitAction);
     toolBar->addSeparator();
     toolBar->addAction(screenshotAction);
@@ -213,10 +214,10 @@ void CameraWindow::createActions() {
     detectFacesAction->setCheckable(true);
     connect(detectFacesAction, SIGNAL(triggered()), this, SLOT(detectFaces()));
 
-    trackFaceAction = new QAction(tr("CamShift. Track a Face"), this);
+    trackFaceAction = new QAction(tr("Track a Face(CamShift)"), this);
     trackFaceAction->setIcon(QIcon(":/images/icon_trackface.png"));
     trackFaceAction->setShortcut(tr("Ctrl+T"));
-    trackFaceAction->setStatusTip(tr("Track a face between frames"));
+    trackFaceAction->setStatusTip(tr("Track a face by color between frames"));
     trackFaceAction->setCheckable(true);
     connect(trackFaceAction, SIGNAL(triggered()), this, SLOT(trackFace()));
 
