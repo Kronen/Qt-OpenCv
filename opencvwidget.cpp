@@ -16,18 +16,11 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
 
         // Get a query frame to initialize the capture and to get the frame's dimensions
         IplImage* frame = cvQueryFrame(mCamera);
-        if(!frame) {
-            w = cvGetCaptureProperty(mCamera, CV_CAP_PROP_FRAME_WIDTH);
-            h = cvGetCaptureProperty(mCamera, CV_CAP_PROP_FRAME_HEIGHT);
-        } else {
-            w = frame->width;
-            h = frame->height;
-        }
-
-        mFps = cvGetCaptureProperty(mCamera, CV_CAP_PROP_FPS);
-        mFps = (mFps > 0) ? mFps : 17;
-
+        w = frame->width;
+        h = frame->height;
         setMinimumSize(w,h);
+
+        mFps = 8;
 
         // QImage to draw on paint event
         mImage = QImage(QSize(w, h), QImage::Format_RGB888);
@@ -81,7 +74,7 @@ void OpenCVWidget::queryFrame() {
     if(mDetectingFaces) mListRect = mFaceDetect->detectFaces(mCvImage);
 
     if(mTrackingFace) {
-        // Check if we have a valid rect, if we have a valid one we track the face,
+        // Check if we have a valid rect. If we have a valid one, we track the face,
         // if not we get a face rect first
         if(!(mCvRect.width > 0 && mCvRect.height > 0)) {
             // Detect the Face
@@ -136,7 +129,7 @@ void OpenCVWidget::videoWrite() {
         filename = QString("webcamVid%1.avi").arg(i++);
 
     CvSize size = cvGetSize(mCvImage);
-    mVideoWriter = cvCreateVideoWriter(filename.toUtf8(), CV_FOURCC('D','I','V','X'), (mFps < 10) ? 5 : mFps/2, size);
+    mVideoWriter = cvCreateVideoWriter(filename.toUtf8(), CV_FOURCC('D','I','V','X'), mFps, size);
 }
 
 void OpenCVWidget::videoStop() {

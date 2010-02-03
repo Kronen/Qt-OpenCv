@@ -70,7 +70,7 @@ QVector<QRect> FaceDetect::detectFaces(IplImage *cvImage) {
         CvSeq *faces = cvHaarDetectObjects(smallImage, mCascade, mStorage, 1.2, 3, mFlags, cvSize(64, 64));
         timeElapsed = (double)cvGetTickCount() - timeElapsed;
 
-        qDebug() << QString("detection time = %1").arg(timeElapsed/((double)cvGetTickFrequency()*1000));
+        //qDebug() << QString("detection time = %1").arg(timeElapsed/((double)cvGetTickFrequency()*1000));
 
         for(int i = 0; i < faces->total; i++) {
             rect = (CvRect*)cvGetSeqElem(faces, i);
