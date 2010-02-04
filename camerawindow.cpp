@@ -1,6 +1,7 @@
 #include "camerawindow.h"
 
 #include <QFileDialog>
+#include <QSettings>
 #include <QMessageBox>
 #include <QtDebug>
 
@@ -14,13 +15,14 @@ CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
     createMenu();
     createToolBar();
     createStatusBar();
+    readSettings();
 
+    // We check if OpenCV was able to detect a compatible device
     if(!cvWidget->isCaptureActive()) {
-        QMessageBox::warning(this, tr("OpenCV + Qt"),
-                                        tr("Can't detect a camera connected to the PC.\n"
-                                           "This program doesn't provide any option\n"
-                                           "to configure the device."),
-                                        QMessageBox::Close);
+        QMessageBox::warning(this, tr("Qt + OpenCV"),
+                             tr("Can't detect a camera connected to the PC.\n"
+                                "This program doesn't provide any option\n"
+                                "to configure the device."), QMessageBox::Close);
 
         videoAction->setEnabled(false);
         screenshotAction->setEnabled(false);
@@ -41,6 +43,7 @@ void CameraWindow::saveScreenshot() {
     cvWidget->saveScreenshot();
 }
 
+// Start/Stop writing the webcam frames to a video file
 void CameraWindow::writeVideo() {
     if(videoAction->isChecked()) {
         videoAction->setIcon(QIcon(":/images/icon_stopvideo.png"));
@@ -51,6 +54,7 @@ void CameraWindow::writeVideo() {
     }
 }
 
+// Start/Stop detect face mode
 void CameraWindow::detectFaces() {
     // We don't track and detect at the same time
     if(detectFacesAction->isChecked()) {
@@ -63,6 +67,7 @@ void CameraWindow::detectFaces() {
     } else cvWidget->setDetectFaces(false);
 }
 
+// Start/Stop track face mode
 void CameraWindow::trackFace() {
     // We don't track and detect at the same time
     if(trackFaceAction->isChecked()) {
@@ -79,31 +84,58 @@ void CameraWindow::trackFace() {
     }
 }
 
+
+// Show a Dialog to calibrate CamShift through vMin and sMin.
+// These variables define thresholds for ignoring pixels that are too close to neutral.
+// vMin sets the threshold for "almost black," and sMin for "almost gray."
 void CameraWindow::dialogCamShift() {
     if(!mCamShiftDialog) {
         mCamShiftDialog = new CamShiftDialog(this);
 
-        mCamShiftDialog->vMinSlider->setValue(cvWidget->camshiftVMin());
-        mCamShiftDialog->sMinSlider->setValue(cvWidget->camshiftSMin());
+        connect(mCamShiftDialog->vMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftVMin(int)));
+        connect(mCamShiftDialog->sMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftSMin(int)));
+        connect(mCamShiftDialog, SIGNAL(accepted()), this, SLOT(writeSettings()));
 
-        connect(mCamShiftDialog->vMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamshiftVMin(int)));
-        connect(mCamShiftDialog->sMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamshiftSMin(int)));
+        QSettings settings("Kronen Software", "Qt + OpenCV");
+        settings.beginGroup("CamShift");
+        mCamShiftDialog->vMinSlider->setValue(settings.value("Vmin").toInt());
+        mCamShiftDialog->sMinSlider->setValue(settings.value("Smin").toInt());
+        settings.endGroup();
     }
 
     mCamShiftDialog->show();
 }
 
+void CameraWindow::writeSettings() {
+    QSettings settings("Kronen Software", "Qt + OpenCV");
+
+    settings.beginGroup("CamShift");
+    settings.setValue("Vmin", cvWidget->camshiftVMin());
+    settings.setValue("Smin", cvWidget->camshiftSMin());
+    settings.endGroup();
+}
+
+void CameraWindow::readSettings() {
+    QSettings settings("Kronen Software", "Qt + OpenCV");
+    QString cascadeFile = settings.value("CascadeFile").toString();
+    if(QFileInfo(cascadeFile).exists()) cvWidget->setCascadeFile(cascadeFile);
+}
+
+// First check if there is a file
+// Show a dialog to choose the haarcascade file to use on face detecting.
+// Face tracking also needs a haarcascade file because we first detect a face to start tracking.
 void CameraWindow::setCascadeFile() {
     QString cascadeFile = QFileDialog::getOpenFileName(this, tr("Choose Cascade File"), "./haarcascades",
                                                        tr("Cascade Files (*.xml)"));
     if(!cascadeFile.isNull()) {
-        cvWidget->setFaceDetectCascadeFile(cascadeFile);
-    } else {
-        detectFacesAction->setChecked(false);
-        trackFaceAction->setChecked(false);
+        QSettings settings("Kronen Software", "Qt + OpenCV");
+        settings.setValue("CascadeFile", cascadeFile);
+        cvWidget->setCascadeFile(cascadeFile);
+        statusLabel->setText(cascadeFile + "loaded");
     }
 }
 
+// Sends the checked flags to the widget to actualize the face detect mode
 void CameraWindow::setFlags() {
     int flags = 0;
 
@@ -159,8 +191,6 @@ void CameraWindow::createMenu() {
 
     settingsMenu->addSeparator();
     settingsMenu->addAction(camshiftDialogAction);
-
-
 }
 
 void CameraWindow::createToolBar() {

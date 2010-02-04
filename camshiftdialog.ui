@@ -34,15 +34,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label">
-       <property name="minimumSize">
-        <size>
-         <width>30</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="text">
-        <string/>
+      <widget class="QSpinBox" name="vMinSpinBox">
+       <property name="maximum">
+        <number>255</number>
        </property>
       </widget>
      </item>
@@ -68,15 +62,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label_2">
-       <property name="minimumSize">
-        <size>
-         <width>30</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="text">
-        <string/>
+      <widget class="QSpinBox" name="sMinSpinBox">
+       <property name="maximum">
+        <number>255</number>
        </property>
       </widget>
      </item>
@@ -90,7 +78,7 @@
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>40</height>
+       <height>30</height>
       </size>
      </property>
     </spacer>
@@ -113,7 +101,7 @@
      <item>
       <widget class="QPushButton" name="closeButton">
        <property name="text">
-        <string>Close</string>
+        <string>Accept</string>
        </property>
       </widget>
      </item>
@@ -153,17 +141,49 @@
    </hints>
   </connection>
   <connection>
-   <sender>vMinSlider</sender>
+   <sender>vMinSpinBox</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>label</receiver>
-   <slot>setNum(int)</slot>
+   <receiver>vMinSlider</receiver>
+   <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>167</x>
-     <y>22</y>
+     <x>223</x>
+     <y>19</y>
     </hint>
     <hint type="destinationlabel">
-     <x>236</x>
+     <x>181</x>
+     <y>19</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sMinSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sMinSlider</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>222</x>
+     <y>47</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>189</x>
+     <y>48</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>vMinSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>vMinSpinBox</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>128</x>
+     <y>21</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>227</x>
      <y>21</y>
     </hint>
    </hints>
@@ -171,16 +191,16 @@
   <connection>
    <sender>sMinSlider</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>label_2</receiver>
-   <slot>setNum(int)</slot>
+   <receiver>sMinSpinBox</receiver>
+   <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>157</x>
+     <x>140</x>
      <y>50</y>
     </hint>
     <hint type="destinationlabel">
-     <x>236</x>
-     <y>49</y>
+     <x>226</x>
+     <y>47</y>
     </hint>
    </hints>
   </connection>

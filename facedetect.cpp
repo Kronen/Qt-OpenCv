@@ -14,6 +14,8 @@ FaceDetect::~FaceDetect() {
     if(mCascade) cvReleaseHaarClassifierCascade(&mCascade);
 }
 
+
+// Load a new classifier cascade, we unload first the previous classifier
 void FaceDetect::setCascadeFile(QString cascadeFile) {
     mCascadeFile = cascadeFile;
     if(mCascade) cvReleaseHaarClassifierCascade(&mCascade);
@@ -24,8 +26,7 @@ QString FaceDetect::cascadeFile() const {
     return mCascadeFile;
 }
 
-/*
-Possible values for mFlags on cvHaarDetectObjects. It can be a combination of zero or more of the following values:
+/* Possible values for mFlags on cvHaarDetectObjects. It can be a combination of zero or more of the following values:
 
         * CV_HAAR_SCALE_IMAGE- for each scale factor used the function will downscale the image rather than "zoom"
             the feature coordinates in the classifier cascade. Currently, the option can only be used alone,
@@ -43,9 +44,7 @@ Possible values for mFlags on cvHaarDetectObjects. It can be a combination of ze
             min_neighbors may be specified to improve the accuracy.
 
 Note, that in single-object mode CV_HAAR_DO_CANNY_PRUNING does not improve performance much and can even slow down the
-processing.
-*/
-
+processing. */
 void FaceDetect::setFlags(int flags) {
     mFlags = flags;
 }
@@ -67,7 +66,7 @@ QVector<QRect> FaceDetect::detectFaces(IplImage *cvImage) {
 
     if(mCascade) {                                  // It isn't necessary in this context, because mCascade exist if we reach this point
         double timeElapsed = (double)cvGetTickCount();
-        CvSeq *faces = cvHaarDetectObjects(smallImage, mCascade, mStorage, 1.2, 3, mFlags, cvSize(64, 64));
+        CvSeq *faces = cvHaarDetectObjects(smallImage, mCascade, mStorage, 1.2, 4, mFlags, cvSize(64, 64));
         timeElapsed = (double)cvGetTickCount() - timeElapsed;
 
         //qDebug() << QString("detection time = %1").arg(timeElapsed/((double)cvGetTickFrequency()*1000));

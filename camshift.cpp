@@ -1,7 +1,5 @@
 #include "camshift.h"
 
-#include <QtDebug>
-
 CamShift::CamShift(CvSize size) {
     float *ranges = mRangesArray;
     mHistBins = 30;
@@ -31,16 +29,17 @@ CamShift::~CamShift() {
 void CamShift::startTracking(IplImage *cvImage, CvRect cvRect) {
     float maxVal = 0.f;
 
-    updateHueImage(cvImage);        // Get mHSVImg and mHueImg
+    // Get mHSVImg and mHueImg
+    updateHueImage(cvImage);
 
     // Calc the histogram of the defined rect in mHueImg
     cvSetImageROI(mHueImg, cvRect);
     cvSetImageROI(mMask, cvRect);
-    cvCalcHist(&mHueImg, mHist, 0, mMask);                                       // (image, hist, accumulate, mask)
+    cvCalcHist(&mHueImg, mHist, 0, mMask);  // cvCalcHist(image, histogram, accumulate, mask)
 
     // We get the MaxValue in the histogram and scale for that value
-    cvGetMinMaxHistValue(mHist, 0, &maxVal, 0, 0);                              // (histogram, minVal, maxVal, minIdx, maxIdx)
-    cvConvertScale(mHist->bins, mHist->bins, maxVal ? (255.0 / maxVal) : 0, 0); // (src, dst, scale, shift)
+    cvGetMinMaxHistValue(mHist, 0, &maxVal, 0, 0);  // cvGetMinMaxHistValue(hist, minVal, maxVal, minIndex, maxIndex)
+    cvConvertScale(mHist->bins, mHist->bins, maxVal ? (255.0 / maxVal) : 0, 0); // cvConvertScale(src, dst, scale, shift)
     cvResetImageROI(mHueImg);
     cvResetImageROI(mMask);
 
@@ -56,7 +55,7 @@ CvBox2D CamShift::trackFace(IplImage *cvImage) {
 
     // Create a probability image based on the face histogram (precalculated on startTracking())
     cvCalcBackProject(&mHueImg, mProbImg, mHist);
-    cvAnd(mProbImg, mMask, mProbImg, 0);                // (src1, src2, dst, mask)
+    cvAnd(mProbImg, mMask, mProbImg, 0);    // cvAnd(src1, src2, dst, mask)
     CvSize size = cvGetSize(mProbImg);
 
     // Check for face out of scope

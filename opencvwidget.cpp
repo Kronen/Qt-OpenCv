@@ -149,7 +149,7 @@ void OpenCVWidget::setFaceDetectFlags(int flags) {
     mFaceDetect->setFlags(flags);
 }
 
-void OpenCVWidget::setFaceDetectCascadeFile(QString filename) {
+void OpenCVWidget::setCascadeFile(QString filename) {
     mFaceDetect->setCascadeFile(filename);
 }
 

@@ -23,8 +23,10 @@ class CameraWindow : public QMainWindow {
         void createMenu();
         void createToolBar();
         void createStatusBar();
+        void readSettings();
 
     private slots:
+        void writeSettings();
         void saveScreenshot();
         void writeVideo();
         void detectFaces();

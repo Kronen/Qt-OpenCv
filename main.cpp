@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
     CameraWindow *mainWin = new CameraWindow();
-    mainWin->setWindowTitle(QString("Qt + OpenCV v%1").arg(version));
+    mainWin->setWindowTitle(appName + appVersion);
     mainWin->show();
 
     return app.exec();

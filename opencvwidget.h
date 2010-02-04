@@ -34,7 +34,7 @@ public:
     void setTrackFace(bool);
 
     void setFaceDetectFlags(int flags);
-    void setFaceDetectCascadeFile(QString filename);
+    void setCascadeFile(QString filename);
 
     int camshiftSMin() const;
     int camshiftVMin() const;    
