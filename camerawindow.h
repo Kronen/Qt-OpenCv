@@ -1,3 +1,22 @@
+/*
+    Author: Alberto G. Lagos (Kronen)
+    Copyright (C) 2010  Alberto G. Lagos (Kronen)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
+
+
 #ifndef CAMERAWINDOW_H
 #define CAMERAWINDOW_H
 
@@ -32,9 +51,11 @@ class CameraWindow : public QMainWindow {
         void detectFaces();
         void trackFace();
         void setCascadeFile();
+        void dialogCamShift();
+        void flipHorizontally();
+        void flipVertically();
         void setFlags();
         void unsetFlags();
-        void dialogCamShift();
 
     protected:
         virtual void closeEvent(QCloseEvent *event);
@@ -59,6 +80,8 @@ class CameraWindow : public QMainWindow {
         // Settings Menu
         QAction *cascadeFileAction;
         QAction *camshiftDialogAction;
+        QAction *flipHorizontallyAction;
+        QAction *flipVerticallyAction;
 
         // Flags Menu
         QAction *findBiggestObjectAction;

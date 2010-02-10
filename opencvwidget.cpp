@@ -1,39 +1,54 @@
+/*  
+    Author: Alberto G. Lagos (Kronen)
+    Copyright (C) 2010  Alberto G. Lagos (Kronen)
+ 
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
+
 #include "opencvwidget.h"
 
-#include <QtDebug>
+#include <QDebug>
 #include <QFileInfo>
 
 OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
+    mDetectingFaces = false;
+    mTrackingFace = false;
+    mFlipV = mFlipH = false;
+    mVideoWriter = 0;
+    mCvRect = cvRect(-1, -1, 0, 0);
     mCamera = 0;
     mCamera = cvCaptureFromCAM(CV_CAP_ANY);
 
     if(mCamera) {
-        int w, h;
-        mDetectingFaces = false;
-        mTrackingFace = false;
-        mVideoWriter = 0;
-        mCvRect = cvRect(-1, -1, 0, 0);
-
         // Get a query frame to initialize the capture and to get the frame's dimensions
         IplImage* frame = cvQueryFrame(mCamera);
-        w = frame->width;
-        h = frame->height;
-        setMinimumSize(w,h);
+        this->setMinimumSize(frame->width, frame->height);
 
         mFps = 8;
 
         // QImage to draw on paint event
-        mImage = QImage(QSize(w, h), QImage::Format_RGB888);
+        mImage = QImage(QSize(frame->width, frame->height), QImage::Format_RGB888);
 
         // IplImage * to work with OpenCV functions
-        mCvImage = cvCreateImageHeader(cvSize(w, h), 8, 3);
+        mCvImage = cvCreateImageHeader(cvSize(frame->width, frame->height), 8, 3);
 
         // Share the buffer between QImage and IplImage *
         mCvImage->imageData = (char *)mImage.bits();
 
         // Init FaceDetect abd CamShift
         mFaceDetect = new FaceDetect();
-        mCamShift = new CamShift(cvSize(w, h));
+        mCamShift = new CamShift(cvSize(frame->width, frame->height));
 
         // Try to load a default cascade file
         QFileInfo cascadeFile("haarcascades/haarcascade_frontalface_alt2.xml");
@@ -64,10 +79,10 @@ void OpenCVWidget::queryFrame() {
     IplImage* frame = cvQueryFrame(mCamera);
     if(!frame) return;
 
-    // We copy the frame to our buffer(fliping it if necessary) and then we convert it from BGR to RGB
-    // (QImage works with RGB and cvQueryFrame returns a BGR IplImage)
-    if(frame->origin == IPL_ORIGIN_TL) cvCopy(frame, mCvImage, 0);
-        else cvFlip(frame, mCvImage, 0);
+    // We copy the frame to our buffer(fliping it if necessary)
+    if(!(mFlipV ^ (frame->origin == IPL_ORIGIN_TL))) cvFlip(frame, mCvImage, 0);
+        else cvCopy(frame, mCvImage, 0);        
+    if(mFlipH) cvFlip(mCvImage, mCvImage, 1);
 
     if(mVideoWriter) cvWriteFrame(mVideoWriter, frame);
 
@@ -93,7 +108,7 @@ void OpenCVWidget::queryFrame() {
         }
     }
 
-    // Only necesary if we are going to paint into screen because QImage uses RGB
+    // Convert it from BGR to RGB. QImage works with RGB and cvQueryFrame returns a BGR IplImage
     cvCvtColor(mCvImage, mCvImage, CV_BGR2RGB);
     this->update();
 }
@@ -159,6 +174,14 @@ void OpenCVWidget::setCamShiftVMin(int vMin) {
 
 void OpenCVWidget::setCamShiftSMin(int sMin) {
     mCamShift->setSMin(sMin);
+}
+
+void OpenCVWidget::flipH() {
+    mFlipH = !mFlipH;
+}
+
+void OpenCVWidget::flipV() {
+    mFlipV = !mFlipV;
 }
 
 int OpenCVWidget::camshiftVMin() const {

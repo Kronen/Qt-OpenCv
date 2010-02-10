@@ -1,14 +1,31 @@
+/*
+    Author: Alberto G. Lagos (Kronen)
+    Copyright (C) 2010  Alberto G. Lagos (Kronen)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
+
 #include "camerawindow.h"
 
 #include <QFileDialog>
 #include <QSettings>
 #include <QMessageBox>
-#include <QtDebug>
+#include <QDebug>
 
 CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
     mCamShiftDialog = 0;
     cvWidget = new OpenCVWidget(this);
-
     setWindowIcon(QIcon(":/images/OpenCV.ico"));
 
     createActions();
@@ -135,6 +152,14 @@ void CameraWindow::setCascadeFile() {
     }
 }
 
+void CameraWindow::flipHorizontally() {
+    cvWidget->flipH();
+}
+
+void CameraWindow::flipVertically() {
+    cvWidget->flipV();
+}
+
 // Sends the checked flags to the widget to actualize the face detect mode
 void CameraWindow::setFlags() {
     int flags = 0;
@@ -191,16 +216,20 @@ void CameraWindow::createMenu() {
 
     settingsMenu->addSeparator();
     settingsMenu->addAction(camshiftDialogAction);
+    settingsMenu->addSeparator();
+    settingsMenu->addAction(flipHorizontallyAction);
+    settingsMenu->addAction(flipVerticallyAction);
 }
 
 void CameraWindow::createToolBar() {
     toolBar = addToolBar(tr("&File"));
     toolBar->setIconSize(QSize(32,32));
-    toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    toolBar->setMovable(false);
     toolBar->addAction(quitAction);
     toolBar->addSeparator();
     toolBar->addAction(screenshotAction);
     toolBar->addAction(videoAction);
+    toolBar->addSeparator();
     toolBar->addAction(detectFacesAction);
     toolBar->addAction(trackFaceAction);
 }
@@ -259,6 +288,16 @@ void CameraWindow::createActions() {
     camshiftDialogAction->setStatusTip(tr("Change the vMin and sMin variables for CamShift"));
     camshiftDialogAction->setEnabled(false);
     connect(camshiftDialogAction, SIGNAL(triggered()), this, SLOT(dialogCamShift()));
+
+    flipHorizontallyAction = new QAction(tr("Flip &Horizontally"), this);
+    flipHorizontallyAction->setStatusTip(tr("Flip the image horizontally"));
+    flipHorizontallyAction->setCheckable(true);
+    connect(flipHorizontallyAction, SIGNAL(triggered()), this, SLOT(flipHorizontally()));
+
+    flipVerticallyAction = new QAction(tr("Flip &Vertically"), this);
+    flipVerticallyAction->setStatusTip(tr("Flip the image vertically"));
+    flipVerticallyAction->setCheckable(true);
+    connect(flipVerticallyAction, SIGNAL(triggered()), this, SLOT(flipVertically()));
 
     // SubMenu Flags
     findBiggestObjectAction = new QAction(tr("Only find the &Biggest Object"), this);
