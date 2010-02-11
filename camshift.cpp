@@ -23,9 +23,9 @@ CamShift::CamShift(CvSize size) {
     mHistBins = 30;
     mRangesArray[0] = 0;
     mRangesArray[1] = 180;
-    mVMin = 100;
+    mVMin = 50;
     mVMax = 256;
-    mSMin = 160;
+    mSMin = 50;
     mFrames = 0;
     mHSVImg  = cvCreateImage(size, 8, 3);
     mHueImg  = cvCreateImage(size, 8, 1);

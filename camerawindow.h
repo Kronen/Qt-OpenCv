@@ -51,7 +51,7 @@ class CameraWindow : public QMainWindow {
         void detectFaces();
         void trackFace();
         void setCascadeFile();
-        void dialogCamShift();
+        void createCamShiftDialog();
         void flipHorizontally();
         void flipVertically();
         void setFlags();

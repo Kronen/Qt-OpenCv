@@ -48,14 +48,17 @@ public:
     void videoWrite();
     void videoStop();
 
-    void flipH();
-    void flipV();
+    void switchFlipH();
+    void switchFlipV();
+    bool flipH() const;
+    bool flipV() const;
 
     void setDetectFaces(bool);
     void setTrackFace(bool);
-
     void setFaceDetectFlags(int flags);
+
     void setCascadeFile(QString filename);
+    QString cascadeFile() const;
 
     int camshiftSMin() const;
     int camshiftVMin() const;    

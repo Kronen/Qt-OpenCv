@@ -24,15 +24,16 @@
 #include <QDebug>
 
 CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
-    mCamShiftDialog = 0;
-    cvWidget = new OpenCVWidget(this);
     setWindowIcon(QIcon(":/images/OpenCV.ico"));
+    setMinimumSize(320, 240);
+
+    cvWidget = new OpenCVWidget(this);
+    createCamShiftDialog();
 
     createActions();
     createMenu();
     createToolBar();
     createStatusBar();
-    readSettings();
 
     // We check if OpenCV was able to detect a compatible device
     if(!cvWidget->isCaptureActive()) {
@@ -45,12 +46,16 @@ CameraWindow::CameraWindow(QWidget *parent) : QMainWindow(parent) {
         screenshotAction->setEnabled(false);
         settingsMenu->setEnabled(false);
         flagsMenu->setEnabled(false);
+    } else {
+        readSettings();
+        statusLabel->setText(QString("OpenCV Face Detection. (w:%1 h:%2)").arg(cvWidget->width()).arg(cvWidget->height()));
     }
 
     setCentralWidget(cvWidget);
 }
 
 void CameraWindow::closeEvent(QCloseEvent *event) {
+    writeSettings();
     delete cvWidget;
     if(mCamShiftDialog) delete mCamShiftDialog;
     event->accept();
@@ -69,73 +74,85 @@ void CameraWindow::writeVideo() {
         videoAction->setIcon(QIcon(":/images/icon_video.png"));
         cvWidget->videoStop();
     }
+    statusLabel->setText("Writing Video");
 }
 
 // Start/Stop detect face mode
 void CameraWindow::detectFaces() {
     // We don't track and detect at the same time
     if(detectFacesAction->isChecked()) {
+        // Call setCascadeFile if there isn't a default cascade file
         if(!cvWidget->isFaceDetectAvalaible()) setCascadeFile();
-        flagsMenu->setEnabled(true);
-        camshiftDialogAction->setEnabled(false);
-        trackFaceAction->setChecked(false);
+
+        // Don't track and detect at the same time
         cvWidget->setTrackFace(false);
         cvWidget->setDetectFaces(true);
+        trackFaceAction->setChecked(false);
+
+        statusLabel->setText("Detecting Faces");
     } else cvWidget->setDetectFaces(false);
 }
 
 // Start/Stop track face mode
-void CameraWindow::trackFace() {
-    // We don't track and detect at the same time
+void CameraWindow::trackFace() {    
     if(trackFaceAction->isChecked()) {
+        // Call setCascadeFile if there isn't a default cascade file
         if(!cvWidget->isFaceDetectAvalaible()) setCascadeFile();
+
+        // Activate/deativate the corresponding menus and actions
         detectFacesAction->setChecked(false);
+        flagsMenu->setEnabled(false);
+
+        // Don't track and detect at the same time
         cvWidget->setDetectFaces(false);
         cvWidget->setTrackFace(true);
-        camshiftDialogAction->setEnabled(true);
-        flagsMenu->setEnabled(false);
+
+        statusLabel->setText("Tracking Face");
     } else {
         cvWidget->setTrackFace(false);
-        camshiftDialogAction->setEnabled(false);
         flagsMenu->setEnabled(true);
     }
 }
 
-
-// Show a Dialog to calibrate CamShift through vMin and sMin.
+// Dialog to calibrate CamShift through vMin and sMin.
 // These variables define thresholds for ignoring pixels that are too close to neutral.
 // vMin sets the threshold for "almost black," and sMin for "almost gray."
-void CameraWindow::dialogCamShift() {
-    if(!mCamShiftDialog) {
-        mCamShiftDialog = new CamShiftDialog(this);
+void CameraWindow::createCamShiftDialog() {
+    mCamShiftDialog = new CamShiftDialog(this);
 
-        connect(mCamShiftDialog->vMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftVMin(int)));
-        connect(mCamShiftDialog->sMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftSMin(int)));
-        connect(mCamShiftDialog, SIGNAL(accepted()), this, SLOT(writeSettings()));
+    connect(mCamShiftDialog->vMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftVMin(int)));
+    connect(mCamShiftDialog->sMinSlider, SIGNAL(valueChanged(int)), cvWidget, SLOT(setCamShiftSMin(int)));
+}
 
-        QSettings settings("Kronen Software", "Qt + OpenCV");
-        settings.beginGroup("CamShift");
-        mCamShiftDialog->vMinSlider->setValue(settings.value("Vmin").toInt());
-        mCamShiftDialog->sMinSlider->setValue(settings.value("Smin").toInt());
-        settings.endGroup();
+void CameraWindow::readSettings() {
+    QSettings settings("Kronen Software", "Qt + OpenCV");
+    if(settings.value("FlipH").toBool()) {
+        cvWidget->switchFlipH();
+        flipHorizontallyAction->setChecked(true);
     }
+    if(settings.value("FlipV").toBool()) {
+        cvWidget->switchFlipV();
+        flipVerticallyAction->setChecked(true);
+    }
+    QString cascadeFile = settings.value("CascadeFile").toString();
+    if(QFileInfo(cascadeFile).exists()) cvWidget->setCascadeFile(cascadeFile);
 
-    mCamShiftDialog->show();
+    settings.beginGroup("CamShift");
+    mCamShiftDialog->vMinSlider->setValue(settings.value("Vmin").toInt());
+    mCamShiftDialog->sMinSlider->setValue(settings.value("Smin").toInt());
+    settings.endGroup();
 }
 
 void CameraWindow::writeSettings() {
     QSettings settings("Kronen Software", "Qt + OpenCV");
+    settings.setValue("FlipH", cvWidget->flipH());
+    settings.setValue("FlipV", cvWidget->flipV());
+    if(!(cvWidget->cascadeFile().isEmpty())) settings.setValue("CascadeFile", cvWidget->cascadeFile());
 
     settings.beginGroup("CamShift");
     settings.setValue("Vmin", cvWidget->camshiftVMin());
     settings.setValue("Smin", cvWidget->camshiftSMin());
     settings.endGroup();
-}
-
-void CameraWindow::readSettings() {
-    QSettings settings("Kronen Software", "Qt + OpenCV");
-    QString cascadeFile = settings.value("CascadeFile").toString();
-    if(QFileInfo(cascadeFile).exists()) cvWidget->setCascadeFile(cascadeFile);
 }
 
 // First check if there is a file
@@ -145,19 +162,17 @@ void CameraWindow::setCascadeFile() {
     QString cascadeFile = QFileDialog::getOpenFileName(this, tr("Choose Cascade File"), "./haarcascades",
                                                        tr("Cascade Files (*.xml)"));
     if(!cascadeFile.isNull()) {
-        QSettings settings("Kronen Software", "Qt + OpenCV");
-        settings.setValue("CascadeFile", cascadeFile);
         cvWidget->setCascadeFile(cascadeFile);
         statusLabel->setText(cascadeFile + "loaded");
     }
 }
 
 void CameraWindow::flipHorizontally() {
-    cvWidget->flipH();
+    cvWidget->switchFlipH();
 }
 
 void CameraWindow::flipVertically() {
-    cvWidget->flipV();
+    cvWidget->switchFlipV();
 }
 
 // Sends the checked flags to the widget to actualize the face detect mode
@@ -239,7 +254,7 @@ void CameraWindow::createStatusBar() {
     statusLabel->setIndent(3);
     statusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    statusBar()->addWidget(statusLabel);
+    statusBar()->addPermanentWidget(statusLabel);
 
     connect(cvWidget, SIGNAL(info(const QString &)), statusLabel, SLOT(setText(const QString &)));
 
@@ -286,8 +301,7 @@ void CameraWindow::createActions() {
 
     camshiftDialogAction = new QAction(tr("CamShift Calibration"), this);
     camshiftDialogAction->setStatusTip(tr("Change the vMin and sMin variables for CamShift"));
-    camshiftDialogAction->setEnabled(false);
-    connect(camshiftDialogAction, SIGNAL(triggered()), this, SLOT(dialogCamShift()));
+    connect(camshiftDialogAction, SIGNAL(triggered()), mCamShiftDialog, SLOT(show()));
 
     flipHorizontallyAction = new QAction(tr("Flip &Horizontally"), this);
     flipHorizontallyAction->setStatusTip(tr("Flip the image horizontally"));

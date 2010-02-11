@@ -26,16 +26,16 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
     mTrackingFace = false;
     mFlipV = mFlipH = false;
     mVideoWriter = 0;
+    mFps = 16;
     mCvRect = cvRect(-1, -1, 0, 0);
-    mCamera = 0;
+    
+    // Camera Initialization
     mCamera = cvCaptureFromCAM(CV_CAP_ANY);
 
     if(mCamera) {
         // Get a query frame to initialize the capture and to get the frame's dimensions
         IplImage* frame = cvQueryFrame(mCamera);
         this->setMinimumSize(frame->width, frame->height);
-
-        mFps = 8;
 
         // QImage to draw on paint event
         mImage = QImage(QSize(frame->width, frame->height), QImage::Format_RGB888);
@@ -46,7 +46,7 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
         // Share the buffer between QImage and IplImage *
         mCvImage->imageData = (char *)mImage.bits();
 
-        // Init FaceDetect abd CamShift
+        // Init Face Detection and Face Tracking
         mFaceDetect = new FaceDetect();
         mCamShift = new CamShift(cvSize(frame->width, frame->height));
 
@@ -62,8 +62,8 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
 }
 
 OpenCVWidget::~OpenCVWidget() {
-    delete mFaceDetect;
-    delete mCamShift;
+    if(mFaceDetect) delete mFaceDetect;
+    if(mCamShift) delete mCamShift;
     cvReleaseCapture(&mCamera);
 }
 
@@ -110,7 +110,7 @@ void OpenCVWidget::queryFrame() {
 
     // Convert it from BGR to RGB. QImage works with RGB and cvQueryFrame returns a BGR IplImage
     cvCvtColor(mCvImage, mCvImage, CV_BGR2RGB);
-    this->update();
+    update();
 }
 
 void OpenCVWidget::paintEvent(QPaintEvent *event) {
@@ -144,7 +144,9 @@ void OpenCVWidget::videoWrite() {
         filename = QString("webcamVid%1.avi").arg(i++);
 
     CvSize size = cvGetSize(mCvImage);
-    mVideoWriter = cvCreateVideoWriter(filename.toUtf8(), CV_FOURCC('D','I','V','X'), mFps, size);
+
+    // It seems that my camera don't get more than 8 fps at 640x480
+    mVideoWriter = cvCreateVideoWriter(filename.toUtf8(), CV_FOURCC('D','I','V','X'), 8, size);
 }
 
 void OpenCVWidget::videoStop() {
@@ -164,8 +166,29 @@ void OpenCVWidget::setFaceDetectFlags(int flags) {
     mFaceDetect->setFlags(flags);
 }
 
+void OpenCVWidget::switchFlipH() {
+    mFlipH = !mFlipH;
+}
+
+void OpenCVWidget::switchFlipV() {
+    mFlipV = !mFlipV;
+}
+
+bool OpenCVWidget::flipH() const {
+    return mFlipH;
+}
+
+bool OpenCVWidget::flipV() const {
+    return mFlipV;
+}
+
 void OpenCVWidget::setCascadeFile(QString filename) {
     mFaceDetect->setCascadeFile(filename);
+}
+
+QString OpenCVWidget::cascadeFile() const {
+    if(mFaceDetect) return mFaceDetect->cascadeFile();
+        else return "";
 }
 
 void OpenCVWidget::setCamShiftVMin(int vMin) {
@@ -174,14 +197,6 @@ void OpenCVWidget::setCamShiftVMin(int vMin) {
 
 void OpenCVWidget::setCamShiftSMin(int sMin) {
     mCamShift->setSMin(sMin);
-}
-
-void OpenCVWidget::flipH() {
-    mFlipH = !mFlipH;
-}
-
-void OpenCVWidget::flipV() {
-    mFlipV = !mFlipV;
 }
 
 int OpenCVWidget::camshiftVMin() const {
