@@ -48,6 +48,7 @@ OpenCVWidget::OpenCVWidget(QWidget *parent) : QWidget(parent) {
 
         // Init Face Detection and Face Tracking
         mFaceDetect = new FaceDetect();
+        mFaceDetect->setFlags(CV_HAAR_FIND_BIGGEST_OBJECT); // default
         mCamShift = new CamShift(cvSize(frame->width, frame->height));
 
         // Try to load a default cascade file
@@ -93,7 +94,6 @@ void OpenCVWidget::queryFrame() {
         // if not we get a face rect first
         if(!(mCvRect.width > 0 && mCvRect.height > 0)) {
             // Detect the Face
-            mFaceDetect->setFlags(CV_HAAR_FIND_BIGGEST_OBJECT);
             QVector<QRect> listRect = mFaceDetect->detectFaces(mCvImage);
 
             if(!listRect.isEmpty()) {
